@@ -1,4 +1,6 @@
+<<<<<<< HEAD
 # EngliFly — Vercel Deployment Guide
+
 
 ## Vercel pe deploy kaise karein (FREE, lifetime)
 
@@ -51,3 +53,6 @@ private val APP_URL = "https://englifly-yourname.vercel.app"
 1. GitHub pe file edit karein
 2. Vercel apne aap deploy kar dega — 1-2 min mein
 3. Android app apne aap update ho jaayega — kuch nahi karna!
+=======
+# Zx-chat-AI
+>>>>>>> be9f650d8563b45224c5d93acce76f87e46f1d4a
