@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import { getMockUser, mockSignOut, type MockUser } from "@/lib/mockAuth";
+import { showReminderIfNeeded } from "@/lib/notifications";
 
 interface AuthContextType {
   user: User | MockUser | null;
@@ -37,6 +38,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
+      if (currentUser) {
+        setTimeout(() => showReminderIfNeeded(), 3000);
+      }
     });
     return () => unsubscribe();
   }, []);

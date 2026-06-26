@@ -2,7 +2,14 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGetUserProfile, getGetUserProfileQueryKey } from "@/lib/api";
-import { ArrowLeft, Crown, LogOut, ChevronRight, Volume2, Gauge, FileText, Info, Shield, Zap } from "lucide-react";
+import { ArrowLeft, Crown, LogOut, ChevronRight, Volume2, Gauge, FileText, Info, Shield, Zap, Bell } from "lucide-react";
+import {
+  isNotificationSupported,
+  getNotificationEnabled,
+  setNotificationEnabled,
+  requestNotificationPermission,
+  showNotification,
+} from "@/lib/notifications";
 import { RATE_MAP, DEFAULT_RATE_KEY, pickBestVoice } from "@/hooks/useSpeech";
 
 const RATE_OPTIONS = [
@@ -25,6 +32,26 @@ export default function Settings() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>(() => localStorage.getItem("ef_voice_uri") ?? "");
   const [testPlaying, setTestPlaying] = useState(false);
+
+  const [notifSupported] = useState(() => isNotificationSupported());
+  const [notifEnabled, setNotifEnabled] = useState(() => getNotificationEnabled());
+  const [notifPermission, setNotifPermission] = useState(() =>
+    isNotificationSupported() ? Notification.permission : "default"
+  );
+
+  async function handleNotifToggle() {
+    if (notifEnabled) {
+      setNotificationEnabled(false);
+      setNotifEnabled(false);
+      return;
+    }
+    const granted = await requestNotificationPermission();
+    setNotifPermission(Notification.permission);
+    if (granted) {
+      setNotifEnabled(true);
+      showNotification("✅ Notifications enabled!", "You'll get daily practice reminders from ZX-Chat AI.");
+    }
+  }
 
   useEffect(() => {
     if (!window.speechSynthesis) return;
@@ -115,6 +142,43 @@ export default function Settings() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 pt-4 pb-8 space-y-4">
+
+        {/* Notifications */}
+        {notifSupported && (
+          <Card>
+            <CardHeader icon={<Bell size={15} className="text-white" />} iconBg="linear-gradient(135deg,#8b5cf6,#7c3aed)" title="Notifications" />
+            <div className="px-4 pb-4 space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: "#f5f8fc" }}>
+                <div className="flex-1 min-w-0 mr-3">
+                  <p className="font-semibold text-slate-800 text-sm">Daily Practice Reminder</p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {notifPermission === "denied"
+                      ? "⚠️ Blocked in browser — allow in site settings"
+                      : "Get reminded if you haven't practiced today"}
+                  </p>
+                </div>
+                <button
+                  onClick={handleNotifToggle}
+                  disabled={notifPermission === "denied"}
+                  className={`relative w-12 h-6 rounded-full transition-all shrink-0 disabled:opacity-40 ${
+                    notifEnabled ? "bg-violet-500" : "bg-slate-200"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${
+                      notifEnabled ? "left-6" : "left-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+              {!notifEnabled && notifPermission !== "denied" && (
+                <p className="text-[11px] text-slate-400 text-center">
+                  Toggle on to allow daily English practice reminders
+                </p>
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* Voice & Speech */}
         <Card>
