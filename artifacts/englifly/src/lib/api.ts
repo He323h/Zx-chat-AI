@@ -111,16 +111,7 @@ export function useCompleteOnboarding() {
   });
 }
 
-// ─── Send Message (OpenAI direct) ─────────────────────────────
-const SYSTEM_PROMPTS: Record<string, string> = {
-  travel:     "You are an English tutor helping with Travel English. Correct mistakes kindly. Keep replies to 2-3 sentences.",
-  interview:  "You are an English tutor doing mock job interview practice. Correct grammar. Keep replies to 2-3 sentences.",
-  school:     "You are an English tutor helping with Daily Speaking. Correct mistakes kindly. Keep replies to 2-3 sentences.",
-  casual:     "You are a friendly English conversation partner. Correct mistakes naturally. Keep replies to 2-3 sentences.",
-  vocabulary: "You are an English vocabulary tutor. Teach words in context. Keep replies to 2-3 sentences.",
-  actor:      "You are an acting English coach. Give lines and feedback. Keep replies to 2-3 sentences.",
-};
-
+// ─── Send Message (via backend proxy) ─────────────────────────
 export function useSendMessage() {
   return useMutation({
     mutationFn: async (args: {
@@ -132,33 +123,19 @@ export function useSendMessage() {
       };
     }) => {
       const { message, category, history } = args.data;
-      const systemPrompt = SYSTEM_PROMPTS[category] ?? SYSTEM_PROMPTS.casual;
 
-      if (!OPENAI_KEY) {
-        return { message: "⚠️ OpenAI API key missing. Add VITE_OPENAI_API_KEY to your .env file." };
-      }
-
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      const res = await fetch("/api/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${OPENAI_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...history,
-            { role: "user", content: message },
-          ],
-          max_tokens: 150,
-          temperature: 0.7,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, category, history }),
       });
 
-      if (!res.ok) throw new Error(`OpenAI error: ${res.status}`);
-      const data = await res.json();
-      return { message: data.choices[0].message.content.trim() };
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(err?.error ?? `Server error: ${res.status}`);
+      }
+      const data = await res.json() as { message: string };
+      return { message: data.message };
     },
   });
 }
