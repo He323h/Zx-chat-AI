@@ -287,9 +287,9 @@ export default function Chat() {
               incrementCorrections();
             }
 
-            // Auto-speak AI reply after 1 second — no click needed
+            // Auto-speak AI reply immediately — no button press needed
             if (!isMuted || callModeRef.current) {
-              setTimeout(() => speak(data.message), 1000);
+              speak(data.message);
             }
             queryClient.invalidateQueries({ queryKey: getGetTodayUsageQueryKey({ uid }) });
           },

@@ -2,64 +2,46 @@ import { Router, type IRouter } from "express";
 
 const router: IRouter = Router();
 
-const SYSTEM_PROMPTS: Record<string, string> = {
-  travel:
-    "You are a friendly English tutor helping with Travel English. Correct mistakes kindly and naturally. Keep replies to 2-3 sentences. If the user writes in Hindi, respond in simple English with a Hindi explanation where helpful.",
-  interview:
-    "You are a friendly English tutor doing mock job interview practice. Correct grammar gently. Keep replies to 2-3 sentences. If the user writes in Hindi, respond in simple English with a Hindi explanation where helpful.",
-  school:
-    "You are a friendly English tutor helping with Daily Speaking. Correct mistakes kindly. Keep replies to 2-3 sentences. If the user writes in Hindi, respond in simple English with a Hindi explanation where helpful.",
-  casual:
-    "You are a friendly English conversation partner and tutor. Correct mistakes naturally and encouragingly. Keep replies to 2-3 sentences. If the user writes in Hindi, respond in simple English with a Hindi explanation where helpful.",
-  vocabulary:
-    "You are a friendly English vocabulary tutor. Teach words in context with examples. Keep replies to 2-3 sentences. If the user writes in Hindi, respond in simple English with a Hindi explanation where helpful.",
-  actor:
-    "You are a friendly acting English coach. Give lines and feedback encouragingly. Keep replies to 2-3 sentences. If the user writes in Hindi, respond in simple English with a Hindi explanation where helpful.",
-};
+const SYSTEM_PROMPT =
+  "You are a friendly English tutor. Always reply in simple clear English. Help user practice English conversation.";
 
-// Read keys per-request so server doesn't need restart after secrets are set
-function getGeminiKeys(): string[] {
+const OPENROUTER_URL   = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_MODEL = "mistralai/mistral-7b-instruct:free";
+
+function getOpenRouterKeys(): string[] {
   return [
-    process.env["VITE_GEMINI_API_KEY_1"] ?? "",
-    process.env["VITE_GEMINI_API_KEY_2"] ?? "",
-    process.env["GEMINI_API_KEY_1"]       ?? "",
-    process.env["GEMINI_API_KEY_2"]       ?? "",
-    process.env["GEMINI_API_KEY"]         ?? "",
+    process.env["VITE_OPENROUTER_API_KEY_1"] ?? "",
+    process.env["VITE_OPENROUTER_API_KEY_2"] ?? "",
   ].filter(Boolean);
 }
 
-const GEMINI_MODEL = "gemini-1.5-flash";
-const GEMINI_BASE  = "https://generativelanguage.googleapis.com/v1beta/models";
-
-async function callGemini(
+async function callOpenRouter(
   apiKey: string,
-  systemPrompt: string,
   history: { role: string; content: string }[],
   message: string
 ): Promise<string> {
-  const contents = [
+  const messages = [
+    { role: "system", content: SYSTEM_PROMPT },
     ...history.map((m) => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }],
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: m.content,
     })),
-    { role: "user", parts: [{ text: message }] },
+    { role: "user", content: message },
   ];
 
-  const res = await fetch(
-    `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents,
-        generationConfig: {
-          maxOutputTokens: 300,
-          temperature: 0.7,
-        },
-      }),
-    }
-  );
+  const res = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type":  "application/json",
+    },
+    body: JSON.stringify({
+      model: OPENROUTER_MODEL,
+      messages,
+      max_tokens: 300,
+      temperature: 0.7,
+    }),
+  });
 
   if (!res.ok) {
     const errText = await res.text();
@@ -67,18 +49,18 @@ async function callGemini(
   }
 
   const data = await res.json() as {
-    candidates: { content: { parts: { text: string }[] } }[];
+    choices: { message: { content: string } }[];
   };
 
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-  if (!text) throw new Error("Empty response from Gemini");
+  const text = data.choices?.[0]?.message?.content ?? "";
+  if (!text) throw new Error("Empty response from OpenRouter");
   return text.trim();
 }
 
 router.post("/chat", async (req, res) => {
-  const { message, category, history } = req.body as {
+  const { message, history } = req.body as {
     message: string;
-    category: string;
+    category?: string;
     history: { role: string; content: string }[];
   };
 
@@ -87,27 +69,25 @@ router.post("/chat", async (req, res) => {
     return;
   }
 
-  const geminiKeys = getGeminiKeys();
-  if (geminiKeys.length === 0) {
-    res.status(500).json({ error: "Gemini API keys not configured on server." });
+  const keys = getOpenRouterKeys();
+  if (keys.length === 0) {
+    res.status(500).json({ error: "OpenRouter API key not configured. Please add VITE_OPENROUTER_API_KEY_1 in Secrets." });
     return;
   }
 
-  const systemPrompt = SYSTEM_PROMPTS[category] ?? SYSTEM_PROMPTS.casual;
   let lastError: Error | null = null;
 
-  for (const key of geminiKeys) {
+  for (const key of keys) {
     try {
-      const reply = await callGemini(key, systemPrompt, history ?? [], message);
+      const reply = await callOpenRouter(key, history ?? [], message);
       res.json({ message: reply });
       return;
     } catch (err: any) {
       lastError = err;
-      // 429 quota / rate-limit → try next key
     }
   }
 
-  res.status(502).json({ error: lastError?.message ?? "All Gemini keys exhausted." });
+  res.status(502).json({ error: lastError?.message ?? "All OpenRouter keys exhausted." });
 });
 
 export default router;
