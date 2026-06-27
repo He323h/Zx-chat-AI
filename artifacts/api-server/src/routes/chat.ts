@@ -20,13 +20,15 @@ const SYSTEM_PROMPTS: Record<string, string> = {
 // Read keys per-request so server doesn't need restart after secrets are set
 function getGeminiKeys(): string[] {
   return [
-    process.env["GEMINI_API_KEY_1"] ?? "",
-    process.env["GEMINI_API_KEY_2"] ?? "",
-    process.env["GEMINI_API_KEY"]   ?? "",
+    process.env["VITE_GEMINI_API_KEY_1"] ?? "",
+    process.env["VITE_GEMINI_API_KEY_2"] ?? "",
+    process.env["GEMINI_API_KEY_1"]       ?? "",
+    process.env["GEMINI_API_KEY_2"]       ?? "",
+    process.env["GEMINI_API_KEY"]         ?? "",
   ].filter(Boolean);
 }
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-1.5-flash";
 const GEMINI_BASE  = "https://generativelanguage.googleapis.com/v1beta/models";
 
 async function callGemini(
