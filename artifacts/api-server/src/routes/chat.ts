@@ -23,7 +23,7 @@ const GEMINI_KEYS: string[] = [
   process.env["GEMINI_API_KEY_2"] ?? "",
 ].filter(Boolean);
 
-const GEMINI_MODEL = "gemini-1.5-flash";
+const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_BASE  = "https://generativelanguage.googleapis.com/v1beta/models";
 
 async function callGemini(
