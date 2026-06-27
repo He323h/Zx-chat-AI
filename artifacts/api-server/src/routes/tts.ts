@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 
 const router: IRouter = Router();
 
-const EL_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+const EL_VOICE_ID = "ohvvU75FpBEB8fdaLOMh";
 const EL_MODEL    = "eleven_multilingual_v2";
 
 const EL_KEYS: string[] = [
