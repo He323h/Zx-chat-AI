@@ -3,6 +3,12 @@ const SYSTEM_PROMPTS = {
     "You are a friendly English conversation partner named ZX. Have natural, engaging conversations. Gently correct grammar mistakes with 'By the way, a more natural way to say that is...' Keep replies to 2-3 sentences.",
   casual:
     "You are a friendly English conversation partner named ZX. Have natural, engaging conversations. Gently correct grammar mistakes. Keep replies to 2-3 sentences.",
+  travel:
+    "You are a friendly English tutor helping with Travel English. Correct mistakes kindly and naturally. Keep replies to 2-3 sentences. If the user writes in Hindi, respond in simple English with a Hindi explanation where helpful.",
+  interview:
+    "You are a friendly English tutor doing mock job interview practice. Correct grammar gently. Keep replies to 2-3 sentences. If the user writes in Hindi, respond in simple English with a Hindi explanation where helpful.",
+  school:
+    "You are a friendly English tutor helping with Daily Speaking. Correct mistakes kindly. Keep replies to 2-3 sentences. If the user writes in Hindi, respond in simple English with a Hindi explanation where helpful.",
   vocabulary: `You are an English vocabulary teacher. When the user tells you a topic or category, give exactly 5 English vocabulary words relevant to that topic.
 
 Use this exact format for each word:
@@ -47,6 +53,50 @@ const MAX_TOKENS = {
   actor: 700,
 };
 
+const GEMINI_KEYS = [
+  process.env["GEMINI_API_KEY_1"] ?? "",
+  process.env["GEMINI_API_KEY_2"] ?? "",
+].filter(Boolean);
+
+const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+
+async function callGemini(apiKey, systemPrompt, history, message, maxTokens) {
+  const contents = [
+    ...(Array.isArray(history) ? history : []).map((m) => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    })),
+    { role: "user", parts: [{ text: message }] },
+  ];
+
+  const res = await fetch(
+    `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents,
+        generationConfig: {
+          maxOutputTokens: maxTokens,
+          temperature: 0.7,
+        },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw Object.assign(new Error(errText), { status: res.status });
+  }
+
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  if (!text) throw new Error("Empty response from Gemini");
+  return text.trim();
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -55,51 +105,27 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const OPENAI_KEY =
-    process.env["OPENAI_API_KEY"] ??
-    process.env["VITE_OPENAI_API_KEY"] ??
-    "";
-
-  if (!OPENAI_KEY) {
+  if (GEMINI_KEYS.length === 0) {
     return res.status(500).json({
-      error: "OpenAI API key not configured. Add OPENAI_API_KEY to Vercel environment variables.",
+      error: "Gemini API keys not configured. Add GEMINI_API_KEY_1 and GEMINI_API_KEY_2 to Vercel environment variables.",
     });
   }
 
   const { message, category, history } = req.body ?? {};
-
   if (!message) return res.status(400).json({ error: "message is required" });
 
   const systemPrompt = SYSTEM_PROMPTS[category] ?? SYSTEM_PROMPTS.casual;
-  const maxTokens = MAX_TOKENS[category] ?? 150;
+  const maxTokens = MAX_TOKENS[category] ?? 200;
 
-  try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...(Array.isArray(history) ? history : []),
-          { role: "user", content: message },
-        ],
-        max_tokens: maxTokens,
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      return res.status(response.status).json({ error: errText });
+  let lastError = null;
+  for (const key of GEMINI_KEYS) {
+    try {
+      const reply = await callGemini(key, systemPrompt, history, message, maxTokens);
+      return res.json({ message: reply });
+    } catch (err) {
+      lastError = err;
     }
-
-    const data = await response.json();
-    return res.json({ message: data.choices[0].message.content.trim() });
-  } catch (err) {
-    return res.status(500).json({ error: err?.message ?? "Unknown error" });
   }
+
+  return res.status(502).json({ error: lastError?.message ?? "All Gemini keys exhausted." });
 }
