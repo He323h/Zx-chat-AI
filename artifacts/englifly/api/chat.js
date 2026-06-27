@@ -1,4 +1,4 @@
-const SYSTEM_PROMPTS: Record<string, string> = {
+const SYSTEM_PROMPTS = {
   travel:     "You are an English tutor helping with Travel English. Correct mistakes kindly. Keep replies to 2-3 sentences.",
   interview:  "You are an English tutor doing mock job interview practice. Correct grammar. Keep replies to 2-3 sentences.",
   school:     "You are an English tutor helping with Daily Speaking. Correct mistakes kindly. Keep replies to 2-3 sentences.",
@@ -7,7 +7,7 @@ const SYSTEM_PROMPTS: Record<string, string> = {
   actor:      "You are an acting English coach. Give lines and feedback. Keep replies to 2-3 sentences.",
 };
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -30,7 +30,7 @@ export default async function handler(req: any, res: any) {
 
   if (!message) return res.status(400).json({ error: "message is required" });
 
-  const systemPrompt = SYSTEM_PROMPTS[category as string] ?? SYSTEM_PROMPTS.casual;
+  const systemPrompt = SYSTEM_PROMPTS[category] ?? SYSTEM_PROMPTS.casual;
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -56,9 +56,9 @@ export default async function handler(req: any, res: any) {
       return res.status(response.status).json({ error: errText });
     }
 
-    const data = await response.json() as { choices: { message: { content: string } }[] };
+    const data = await response.json();
     return res.json({ message: data.choices[0].message.content.trim() });
-  } catch (err: any) {
+  } catch (err) {
     return res.status(500).json({ error: err?.message ?? "Unknown error" });
   }
 }
