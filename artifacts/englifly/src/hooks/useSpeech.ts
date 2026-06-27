@@ -1,37 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 
-// ─── ElevenLabs config ────────────────────────────────────────────────────────
-const EL_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"; // Rachel
-const EL_MODEL    = "eleven_multilingual_v2";
-
-// Collect non-empty keys in priority order
-const EL_KEYS: string[] = [
-  import.meta.env.VITE_ELEVENLABS_API_KEY_1 ?? "",
-  import.meta.env.VITE_ELEVENLABS_API_KEY_2 ?? "",
-].filter(Boolean);
-
-// Module-level: remembers which key is currently working across hook re-renders
-let elKeyIndex = 0;
-
-// ─── ElevenLabs fetch helper ──────────────────────────────────────────────────
-async function fetchElevenLabs(text: string, apiKey: string): Promise<Blob> {
-  const res = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${EL_VOICE_ID}`,
-    {
-      method: "POST",
-      headers: {
-        "xi-api-key":   apiKey,
-        "Content-Type": "application/json",
-        "Accept":       "audio/mpeg",
-      },
-      body: JSON.stringify({
-        text,
-        model_id: EL_MODEL,
-        voice_settings: { stability: 0.5, similarity_boost: 0.75 },
-      }),
-    }
-  );
-  if (!res.ok) throw new Error(`ElevenLabs ${res.status}`);
+// ─── TTS via backend proxy ────────────────────────────────────────────────────
+async function fetchTTS(text: string): Promise<Blob> {
+  const res = await fetch("/api/tts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) throw new Error(`TTS ${res.status}`);
   return res.blob();
 }
 
@@ -151,17 +127,12 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
     }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
 
-    // Try ElevenLabs keys starting from the last working one
+    // Try TTS proxy (backend handles ElevenLabs keys securely)
     let blob: Blob | null = null;
-    for (let i = elKeyIndex; i < EL_KEYS.length; i++) {
-      try {
-        blob = await fetchElevenLabs(text, EL_KEYS[i]);
-        elKeyIndex = i; // this key worked — remember it
-        break;
-      } catch {
-        // This key failed → advance the global index so next call skips it
-        elKeyIndex = i + 1;
-      }
+    try {
+      blob = await fetchTTS(text);
+    } catch {
+      blob = null;
     }
 
     if (blob) {

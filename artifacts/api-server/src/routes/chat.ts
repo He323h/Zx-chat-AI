@@ -18,7 +18,7 @@ router.post("/chat", async (req, res) => {
     history: { role: string; content: string }[];
   };
 
-  const OPENAI_KEY = process.env["VITE_OPENAI_API_KEY"] ?? process.env["OPENAI_API_KEY"] ?? "";
+  const OPENAI_KEY = process.env["OPENAI_API_KEY"] ?? "";
 
   if (!OPENAI_KEY) {
     res.status(500).json({ error: "OpenAI API key not configured on server." });

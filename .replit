@@ -24,13 +24,13 @@ args = "Start application"
 name = "Start application"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "pnpm --filter @workspace/englifly run dev"
-waitForPort = 3000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "(pnpm --filter @workspace/api-server run dev &) && pnpm --filter @workspace/englifly run dev"
+waitForPort = 5000
 
 [agent]
 stack = "BEST_EFFORT_FALLBACK"
@@ -44,8 +44,6 @@ timeoutMs = 20000
 [userenv]
 
 [userenv.shared]
-VITE_ELEVENLABS_API_KEY_1 = "Sk_4e055303d9fcc6e9cf4c8134ec8b678035fd34c89645e730"
-VITE_ELEVENLABS_API_KEY_2 = "Sk_98619bb5316abdf02925892c6dbfe45ab38ee3b2b0bbe9cf"
 
 [nix]
 channel = "stable-25_05"
