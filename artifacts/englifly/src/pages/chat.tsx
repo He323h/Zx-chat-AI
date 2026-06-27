@@ -356,7 +356,12 @@ export default function Chat() {
   }, [uid]);
 
   function handleMicClick() {
-    if (isListening) stopListening(); else startListening();
+    if (isListening) {
+      stopListening();
+    } else {
+      stopSpeaking(); // stop AI voice before user speaks
+      startListening();
+    }
   }
 
   function enterCallMode() {
@@ -396,7 +401,7 @@ export default function Chat() {
       <div className="min-h-screen flex flex-col max-w-lg mx-auto" style={{ background: "#f0f4f8" }}>
         {/* Header */}
         <div className="bg-white border-b border-border px-4 py-3 flex items-center gap-3 shadow-sm shrink-0">
-          <button onClick={() => setLocation("/home")}
+          <button onClick={() => { stopSpeaking(); stopListening(); setLocation("/home"); }}
             className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#f0f4f8] transition-colors">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
@@ -514,7 +519,7 @@ export default function Chat() {
           </div>
           {isListening && (
             <p className="text-center text-xs font-medium mt-2 fade-up" style={{ color: "hsl(var(--primary))" }}>
-              Listening… tap mic to stop & send
+              🎙️ Listening… speak and it will auto-send
             </p>
           )}
         </div>

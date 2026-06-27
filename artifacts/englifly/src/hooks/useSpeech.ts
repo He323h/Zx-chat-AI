@@ -11,11 +11,9 @@ interface UseSpeechReturn {
   isSupported: boolean;
 }
 
-// Rate presets stored in localStorage as "slow" | "normal" | "fast"
 export const RATE_MAP: Record<string, number> = { slow: 0.7, normal: 1.0, fast: 1.25 };
-export const DEFAULT_RATE_KEY = "slow"; // 0.7x — easier for beginners
+export const DEFAULT_RATE_KEY = "slow";
 
-/** Pick the best available voice: en-IN first, then en-GB, then any en-US, else first available */
 export function pickBestVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   if (!voices.length) return null;
   const find = (lang: string) => voices.find(v => v.lang === lang);
@@ -28,7 +26,6 @@ export function pickBestVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVo
   );
 }
 
-/** Read user's saved voice URI from localStorage, resolve to a real voice object */
 function getSavedVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   const saved = localStorage.getItem("ef_voice_uri");
   if (saved) {
@@ -43,12 +40,34 @@ function getSavedRate(): number {
   return RATE_MAP[key] ?? RATE_MAP[DEFAULT_RATE_KEY];
 }
 
+/** Get voices, waiting for voiceschanged if list is empty */
+function getVoicesReady(): Promise<SpeechSynthesisVoice[]> {
+  return new Promise(resolve => {
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length) { resolve(voices); return; }
+    const onChanged = () => {
+      window.speechSynthesis.removeEventListener("voiceschanged", onChanged);
+      resolve(window.speechSynthesis.getVoices());
+    };
+    window.speechSynthesis.addEventListener("voiceschanged", onChanged);
+    // Fallback after 1s if event never fires
+    setTimeout(() => {
+      window.speechSynthesis.removeEventListener("voiceschanged", onChanged);
+      resolve(window.speechSynthesis.getVoices());
+    }, 1000);
+  });
+}
+
 export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeechReturn {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const recognitionRef = useRef<any>(null);
   const finalTranscriptRef = useRef("");
+  const isSpeakingRef = useRef(false);
+  // Always-current ref so recognition.onend never captures a stale closure
+  const onTranscriptReadyRef = useRef(onTranscriptReady);
+  useEffect(() => { onTranscriptReadyRef.current = onTranscriptReady; }, [onTranscriptReady]);
 
   const SpeechRecognitionClass =
     typeof window !== "undefined"
@@ -58,21 +77,50 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
   const isSupported = !!SpeechRecognitionClass;
 
   const stopListening = useCallback(() => {
-    if (recognitionRef.current) recognitionRef.current.stop();
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+  }, []);
+
+  const stopSpeaking = useCallback(() => {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+    isSpeakingRef.current = false;
   }, []);
 
   const startListening = useCallback(() => {
     if (!SpeechRecognitionClass) return;
+
+    // Stop any ongoing speech first
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+    isSpeakingRef.current = false;
+
+    // Reset previous transcript
     finalTranscriptRef.current = "";
     setTranscript("");
 
+    // Stop existing recognition if any
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch {}
+      recognitionRef.current = null;
+    }
+
     const recognition = new SpeechRecognitionClass();
     recognitionRef.current = recognition;
-    recognition.continuous = true;
+
+    // continuous=false → auto-stops after speech ends, triggers onend automatically
+    recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = "en-IN";
 
-    recognition.onstart = () => setIsListening(true);
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
 
     recognition.onresult = (event: any) => {
       let interim = "";
@@ -86,33 +134,37 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
       setTranscript(finalTranscriptRef.current + interim);
     };
 
-    recognition.onerror = () => setIsListening(false);
+    recognition.onerror = (event: any) => {
+      if (event.error === "no-speech" || event.error === "aborted") return;
+      setIsListening(false);
+    };
 
     recognition.onend = () => {
       setIsListening(false);
+      recognitionRef.current = null;
       const text = finalTranscriptRef.current.trim();
-      if (text && onTranscriptReady) {
-        onTranscriptReady(text);
-        finalTranscriptRef.current = "";
-        setTranscript("");
+      setTranscript("");
+      finalTranscriptRef.current = "";
+      // Use ref so we always call the latest handleSend, never a stale closure
+      if (text && onTranscriptReadyRef.current) {
+        onTranscriptReadyRef.current(text);
       }
     };
 
-    recognition.start();
-  }, [SpeechRecognitionClass, onTranscriptReady]);
+    try {
+      recognition.start();
+    } catch {}
+  }, [SpeechRecognitionClass]); // no onTranscriptReady dep — using ref instead
 
-  const speak = useCallback((text: string) => {
+  const speak = useCallback(async (text: string) => {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-
-    // Read rate from localStorage every call so settings take effect immediately
     utterance.rate = getSavedRate();
     utterance.pitch = 1;
 
-    // Pick voice from localStorage preference, then best available
-    const voices = window.speechSynthesis.getVoices();
+    const voices = await getVoicesReady();
     const voice = getSavedVoice(voices);
     if (voice) {
       utterance.voice = voice;
@@ -121,23 +173,28 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
       utterance.lang = "en-IN";
     }
 
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      isSpeakingRef.current = true;
+    };
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      isSpeakingRef.current = false;
+    };
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+      isSpeakingRef.current = false;
+    };
 
     window.speechSynthesis.speak(utterance);
   }, []);
 
-  const stopSpeaking = useCallback(() => {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
-  }, []);
-
+  // Cleanup on unmount — stop everything
   useEffect(() => {
     return () => {
-      if (recognitionRef.current) recognitionRef.current.abort();
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch {}
+      }
       if (window.speechSynthesis) window.speechSynthesis.cancel();
     };
   }, []);
