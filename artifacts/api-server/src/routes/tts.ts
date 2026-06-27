@@ -7,6 +7,7 @@ const EL_VOICE_FALLBACK = "EXAVITQu4vr4xnSDxMaL"; // Bella — confirmed accessi
 const EL_MODEL = "eleven_multilingual_v2";
 
 const EL_KEYS: string[] = [
+  process.env["ELEVENLABS_API_KEY"] ?? "",
   process.env["ELEVENLABS_API_KEY_1"] ?? "",
   process.env["ELEVENLABS_API_KEY_2"] ?? "",
 ].filter(Boolean);
