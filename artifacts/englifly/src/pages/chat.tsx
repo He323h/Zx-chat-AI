@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation, useSearch } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSpeech } from "@/hooks/useSpeech";
+import { useSpeech, unlockAudio } from "@/hooks/useSpeech";
 import { recordPracticeNow } from "@/lib/notifications";
 import {
   useSendMessage,
@@ -251,6 +251,7 @@ export default function Chat() {
       const trimmed = text.trim();
       if (!trimmed || !uid || usage?.limitReached) return;
 
+      unlockAudio(); // unlock AudioContext on user gesture so auto-play works
       setInputText("");
       recordPracticeNow();
       const userMsg: Message = { id: `u-${Date.now()}`, role: "user", content: trimmed };
@@ -360,6 +361,7 @@ export default function Chat() {
   }, [uid]);
 
   function handleMicClick() {
+    unlockAudio(); // unlock AudioContext on user gesture
     if (isListening) {
       stopListening();
     } else {
