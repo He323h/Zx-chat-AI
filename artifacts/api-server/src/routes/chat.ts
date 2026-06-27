@@ -17,8 +17,9 @@ const SYSTEM_PROMPTS: Record<string, string> = {
     "You are a friendly acting English coach. Give lines and feedback encouragingly. Keep replies to 2-3 sentences. If the user writes in Hindi, respond in simple English with a Hindi explanation where helpful.",
 };
 
-// Gemini keys in priority order — KEY_1 first, KEY_2 as fallback
+// Gemini key — support both GEMINI_API_KEY and legacy GEMINI_API_KEY_1/2
 const GEMINI_KEYS: string[] = [
+  process.env["GEMINI_API_KEY"] ?? "",
   process.env["GEMINI_API_KEY_1"] ?? "",
   process.env["GEMINI_API_KEY_2"] ?? "",
 ].filter(Boolean);
