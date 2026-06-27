@@ -1,37 +1,53 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 
-interface UseSpeechReturn {
-  isListening: boolean;
-  transcript: string;
-  isSpeaking: boolean;
-  startListening: () => void;
-  stopListening: () => void;
-  speak: (text: string) => void;
-  stopSpeaking: () => void;
-  isSupported: boolean;
+// ─── ElevenLabs config ────────────────────────────────────────────────────────
+const EL_VOICE_ID = "21m00Tcm4TlvDq8ikWAM"; // Rachel
+const EL_MODEL    = "eleven_multilingual_v2";
+
+// Collect non-empty keys in priority order
+const EL_KEYS: string[] = [
+  import.meta.env.VITE_ELEVENLABS_API_KEY_1 ?? "",
+  import.meta.env.VITE_ELEVENLABS_API_KEY_2 ?? "",
+].filter(Boolean);
+
+// Module-level: remembers which key is currently working across hook re-renders
+let elKeyIndex = 0;
+
+// ─── ElevenLabs fetch helper ──────────────────────────────────────────────────
+async function fetchElevenLabs(text: string, apiKey: string): Promise<Blob> {
+  const res = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${EL_VOICE_ID}`,
+    {
+      method: "POST",
+      headers: {
+        "xi-api-key":   apiKey,
+        "Content-Type": "application/json",
+        "Accept":       "audio/mpeg",
+      },
+      body: JSON.stringify({
+        text,
+        model_id: EL_MODEL,
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+      }),
+    }
+  );
+  if (!res.ok) throw new Error(`ElevenLabs ${res.status}`);
+  return res.blob();
 }
 
+// ─── Web Speech API helpers ──────────────────────────────────────────────────
 export const RATE_MAP: Record<string, number> = { slow: 0.7, normal: 1.0, fast: 1.25 };
 export const DEFAULT_RATE_KEY = "slow";
 
 export function pickBestVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   if (!voices.length) return null;
   const find = (lang: string) => voices.find(v => v.lang === lang);
-  return (
-    find("en-IN") ??
-    find("en-GB") ??
-    find("en-US") ??
-    voices.find(v => v.lang.startsWith("en")) ??
-    voices[0]
-  );
+  return find("en-IN") ?? find("en-GB") ?? find("en-US") ?? voices.find(v => v.lang.startsWith("en")) ?? voices[0];
 }
 
 function getSavedVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   const saved = localStorage.getItem("ef_voice_uri");
-  if (saved) {
-    const match = voices.find(v => v.voiceURI === saved);
-    if (match) return match;
-  }
+  if (saved) { const m = voices.find(v => v.voiceURI === saved); if (m) return m; }
   return pickBestVoice(voices);
 }
 
@@ -40,7 +56,6 @@ function getSavedRate(): number {
   return RATE_MAP[key] ?? RATE_MAP[DEFAULT_RATE_KEY];
 }
 
-/** Get voices, waiting for voiceschanged if list is empty */
 function getVoicesReady(): Promise<SpeechSynthesisVoice[]> {
   return new Promise(resolve => {
     const voices = window.speechSynthesis.getVoices();
@@ -50,7 +65,6 @@ function getVoicesReady(): Promise<SpeechSynthesisVoice[]> {
       resolve(window.speechSynthesis.getVoices());
     };
     window.speechSynthesis.addEventListener("voiceschanged", onChanged);
-    // Fallback after 1s if event never fires
     setTimeout(() => {
       window.speechSynthesis.removeEventListener("voiceschanged", onChanged);
       resolve(window.speechSynthesis.getVoices());
@@ -58,14 +72,28 @@ function getVoicesReady(): Promise<SpeechSynthesisVoice[]> {
   });
 }
 
+// ─── Hook types ───────────────────────────────────────────────────────────────
+interface UseSpeechReturn {
+  isListening: boolean;
+  transcript:  string;
+  isSpeaking:  boolean;
+  startListening:  () => void;
+  stopListening:   () => void;
+  speak:           (text: string) => void;
+  stopSpeaking:    () => void;
+  isSupported:     boolean;
+}
+
+// ─── Main hook ────────────────────────────────────────────────────────────────
 export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeechReturn {
   const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState("");
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const recognitionRef = useRef<any>(null);
-  const finalTranscriptRef = useRef("");
-  const isSpeakingRef = useRef(false);
-  // Always-current ref so recognition.onend never captures a stale closure
+  const [transcript,  setTranscript]  = useState("");
+  const [isSpeaking,  setIsSpeaking]  = useState(false);
+
+  const recognitionRef      = useRef<any>(null);
+  const finalTranscriptRef  = useRef("");
+  const audioRef            = useRef<HTMLAudioElement | null>(null); // ElevenLabs audio element
+  const audioBlobUrlRef     = useRef<string | null>(null);           // for cleanup
   const onTranscriptReadyRef = useRef(onTranscriptReady);
   useEffect(() => { onTranscriptReadyRef.current = onTranscriptReady; }, [onTranscriptReady]);
 
@@ -73,9 +101,101 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
     typeof window !== "undefined"
       ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
       : null;
-
   const isSupported = !!SpeechRecognitionClass;
 
+  // ── Stop audio (ElevenLabs or Web Speech) ───────────────────────────────
+  const stopSpeaking = useCallback(() => {
+    // Stop ElevenLabs audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
+    }
+    if (audioBlobUrlRef.current) {
+      URL.revokeObjectURL(audioBlobUrlRef.current);
+      audioBlobUrlRef.current = null;
+    }
+    // Stop Web Speech
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  }, []);
+
+  // ── Web Speech fallback ──────────────────────────────────────────────────
+  const webSpeechFallback = useCallback(async (text: string) => {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate  = getSavedRate();
+    utterance.pitch = 1;
+    const voices = await getVoicesReady();
+    const voice  = getSavedVoice(voices);
+    if (voice) { utterance.voice = voice; utterance.lang = voice.lang; }
+    else         { utterance.lang = "en-IN"; }
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend   = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+  }, []);
+
+  // ── Main speak function ──────────────────────────────────────────────────
+  const speak = useCallback(async (text: string) => {
+    // Stop anything currently playing
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current = null;
+    }
+    if (audioBlobUrlRef.current) {
+      URL.revokeObjectURL(audioBlobUrlRef.current);
+      audioBlobUrlRef.current = null;
+    }
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+
+    // Try ElevenLabs keys starting from the last working one
+    let blob: Blob | null = null;
+    for (let i = elKeyIndex; i < EL_KEYS.length; i++) {
+      try {
+        blob = await fetchElevenLabs(text, EL_KEYS[i]);
+        elKeyIndex = i; // this key worked — remember it
+        break;
+      } catch {
+        // This key failed → advance the global index so next call skips it
+        elKeyIndex = i + 1;
+      }
+    }
+
+    if (blob) {
+      // Play via <audio> element
+      const url   = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current        = audio;
+      audioBlobUrlRef.current = url;
+      setIsSpeaking(true);
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(url);
+        audioBlobUrlRef.current = null;
+        if (audioRef.current === audio) audioRef.current = null;
+      };
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(url);
+        audioBlobUrlRef.current = null;
+        if (audioRef.current === audio) audioRef.current = null;
+      };
+      audio.play().catch(() => {
+        // Autoplay blocked — fall back to Web Speech
+        setIsSpeaking(false);
+        webSpeechFallback(text);
+      });
+      return;
+    }
+
+    // Both ElevenLabs keys exhausted → Web Speech fallback
+    webSpeechFallback(text);
+  }, [webSpeechFallback]);
+
+  // ── Stop listening ───────────────────────────────────────────────────────
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
@@ -84,27 +204,20 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
     setIsListening(false);
   }, []);
 
-  const stopSpeaking = useCallback(() => {
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    setIsSpeaking(false);
-    isSpeakingRef.current = false;
-  }, []);
-
+  // ── Start listening ──────────────────────────────────────────────────────
   const startListening = useCallback(() => {
     if (!SpeechRecognitionClass) return;
 
-    // Stop any ongoing speech first
+    // Stop AI voice before mic starts
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    if (audioBlobUrlRef.current) { URL.revokeObjectURL(audioBlobUrlRef.current); audioBlobUrlRef.current = null; }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     setIsSpeaking(false);
-    isSpeakingRef.current = false;
 
-    // Reset previous transcript
+    // Reset transcript
     finalTranscriptRef.current = "";
     setTranscript("");
 
-    // Stop existing recognition if any
     if (recognitionRef.current) {
       try { recognitionRef.current.abort(); } catch {}
       recognitionRef.current = null;
@@ -112,23 +225,19 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
 
     const recognition = new SpeechRecognitionClass();
     recognitionRef.current = recognition;
-
-    // continuous=false → auto-stops after speech ends, triggers onend automatically
-    recognition.continuous = false;
+    recognition.continuous     = false; // auto-stops after speech → triggers onend
     recognition.interimResults = true;
-    recognition.lang = "en-IN";
+    recognition.lang           = "en-IN";
 
-    recognition.onstart = () => {
-      setIsListening(true);
-    };
+    recognition.onstart = () => setIsListening(true);
 
     recognition.onresult = (event: any) => {
       let interim = "";
-      let final = "";
+      let final   = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (result.isFinal) final += result[0].transcript;
-        else interim += result[0].transcript;
+        const r = event.results[i];
+        if (r.isFinal) final   += r[0].transcript;
+        else            interim += r[0].transcript;
       }
       if (final) finalTranscriptRef.current += final;
       setTranscript(finalTranscriptRef.current + interim);
@@ -145,57 +254,21 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
       const text = finalTranscriptRef.current.trim();
       setTranscript("");
       finalTranscriptRef.current = "";
-      // Use ref so we always call the latest handleSend, never a stale closure
       if (text && onTranscriptReadyRef.current) {
         onTranscriptReadyRef.current(text);
       }
     };
 
-    try {
-      recognition.start();
-    } catch {}
-  }, [SpeechRecognitionClass]); // no onTranscriptReady dep — using ref instead
+    try { recognition.start(); } catch {}
+  }, [SpeechRecognitionClass]);
 
-  const speak = useCallback(async (text: string) => {
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = getSavedRate();
-    utterance.pitch = 1;
-
-    const voices = await getVoicesReady();
-    const voice = getSavedVoice(voices);
-    if (voice) {
-      utterance.voice = voice;
-      utterance.lang = voice.lang;
-    } else {
-      utterance.lang = "en-IN";
-    }
-
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-      isSpeakingRef.current = true;
-    };
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      isSpeakingRef.current = false;
-    };
-    utterance.onerror = () => {
-      setIsSpeaking(false);
-      isSpeakingRef.current = false;
-    };
-
-    window.speechSynthesis.speak(utterance);
-  }, []);
-
-  // Cleanup on unmount — stop everything
+  // ── Cleanup on unmount ───────────────────────────────────────────────────
   useEffect(() => {
     return () => {
-      if (recognitionRef.current) {
-        try { recognitionRef.current.abort(); } catch {}
-      }
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (recognitionRef.current) { try { recognitionRef.current.abort(); } catch {} }
+      if (audioRef.current)        { audioRef.current.pause(); audioRef.current = null; }
+      if (audioBlobUrlRef.current) { URL.revokeObjectURL(audioBlobUrlRef.current); audioBlobUrlRef.current = null; }
+      if (window.speechSynthesis)  window.speechSynthesis.cancel();
     };
   }, []);
 
