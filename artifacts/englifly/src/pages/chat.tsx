@@ -376,6 +376,10 @@ export default function Chat() {
     stopListening();
     callModeRef.current = false;
     setCallModeState(false);
+    // Voice Practice launches with mode=voice — go home when call ends
+    if (startInVoiceMode) {
+      setLocation("/home");
+    }
   }
 
   function getCallPhase(): CallPhase {
