@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 
 const router: IRouter = Router();
 
-const EL_VOICE_PRIMARY  = process.env["ELEVENLABS_VOICE_ID"] ?? "ohvvU75FpBEB8fdaLOMh";
+const EL_VOICE_PRIMARY  = (process.env["ELEVENLABS_VOICE_ID"] ?? "ohvvU75FpBEB8fdaLOMh").trim();
 const EL_VOICE_FALLBACK = "EXAVITQu4vr4xnSDxMaL"; // Bella — always accessible on free plan
 const EL_MODEL = "eleven_multilingual_v2";
 

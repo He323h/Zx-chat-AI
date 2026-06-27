@@ -16,6 +16,7 @@ import {
   Mic, MicOff, Send, ArrowLeft, Volume2, VolumeX, Crown,
   Phone, PhoneOff,
 } from "lucide-react";
+
 import {
   incrementSessions, incrementMsgs, incrementCorrections,
   midnightCountdown,
@@ -285,7 +286,10 @@ export default function Chat() {
               incrementCorrections();
             }
 
-            if (!isMuted || callModeRef.current) speak(data.message);
+            // Auto-speak AI reply after 1 second — no click needed
+            if (!isMuted || callModeRef.current) {
+              setTimeout(() => speak(data.message), 1000);
+            }
             queryClient.invalidateQueries({ queryKey: getGetTodayUsageQueryKey({ uid }) });
           },
           onError: () => {
@@ -470,21 +474,11 @@ export default function Chat() {
                 <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
                   style={{ background: "hsl(var(--primary))" }}>E</div>
               )}
-              <div className="max-w-[78%] group relative">
+              <div className="max-w-[78%]">
                 <div className={`px-3.5 py-2.5 text-sm leading-relaxed shadow-sm
                   ${msg.role === "user" ? "bubble-sent bubble-in-right" : "bubble-recv bubble-in-left"}`}>
                   {msg.content}
                 </div>
-                {msg.role === "assistant" && (
-                  <button
-                    onClick={() => speak(msg.content)}
-                    title="Replay audio"
-                    className="absolute -bottom-3 left-1 w-6 h-6 rounded-full flex items-center justify-center shadow-md
-                      opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-                    style={{ background: "hsl(var(--primary))" }}>
-                    <Volume2 size={11} className="text-white" />
-                  </button>
-                )}
               </div>
             </div>
           ))}
