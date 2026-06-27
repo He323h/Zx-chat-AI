@@ -17,14 +17,16 @@ const SYSTEM_PROMPTS: Record<string, string> = {
     "You are a friendly acting English coach. Give lines and feedback encouragingly. Keep replies to 2-3 sentences. If the user writes in Hindi, respond in simple English with a Hindi explanation where helpful.",
 };
 
-// Gemini key — support both GEMINI_API_KEY and legacy GEMINI_API_KEY_1/2
-const GEMINI_KEYS: string[] = [
-  process.env["GEMINI_API_KEY"] ?? "",
-  process.env["GEMINI_API_KEY_1"] ?? "",
-  process.env["GEMINI_API_KEY_2"] ?? "",
-].filter(Boolean);
+// Read keys per-request so server doesn't need restart after secrets are set
+function getGeminiKeys(): string[] {
+  return [
+    process.env["GEMINI_API_KEY_1"] ?? "",
+    process.env["GEMINI_API_KEY_2"] ?? "",
+    process.env["GEMINI_API_KEY"]   ?? "",
+  ].filter(Boolean);
+}
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-1.5-flash";
 const GEMINI_BASE  = "https://generativelanguage.googleapis.com/v1beta/models";
 
 async function callGemini(
@@ -33,7 +35,6 @@ async function callGemini(
   history: { role: string; content: string }[],
   message: string
 ): Promise<string> {
-  // Build Gemini contents array — map assistant → model role
   const contents = [
     ...history.map((m) => ({
       role: m.role === "assistant" ? "model" : "user",
@@ -51,7 +52,7 @@ async function callGemini(
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents,
         generationConfig: {
-          maxOutputTokens: 200,
+          maxOutputTokens: 300,
           temperature: 0.7,
         },
       }),
@@ -84,7 +85,8 @@ router.post("/chat", async (req, res) => {
     return;
   }
 
-  if (GEMINI_KEYS.length === 0) {
+  const geminiKeys = getGeminiKeys();
+  if (geminiKeys.length === 0) {
     res.status(500).json({ error: "Gemini API keys not configured on server." });
     return;
   }
@@ -92,7 +94,7 @@ router.post("/chat", async (req, res) => {
   const systemPrompt = SYSTEM_PROMPTS[category] ?? SYSTEM_PROMPTS.casual;
   let lastError: Error | null = null;
 
-  for (const key of GEMINI_KEYS) {
+  for (const key of geminiKeys) {
     try {
       const reply = await callGemini(key, systemPrompt, history ?? [], message);
       res.json({ message: reply });
@@ -100,7 +102,6 @@ router.post("/chat", async (req, res) => {
     } catch (err: any) {
       lastError = err;
       // 429 quota / rate-limit → try next key
-      // Other errors → also try next key as a best-effort
     }
   }
 

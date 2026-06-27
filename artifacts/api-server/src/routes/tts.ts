@@ -2,15 +2,18 @@ import { Router, type IRouter } from "express";
 
 const router: IRouter = Router();
 
-const EL_VOICE_PRIMARY  = "ohvvU75FpBEB8fdaLOMh";
-const EL_VOICE_FALLBACK = "EXAVITQu4vr4xnSDxMaL"; // Bella — confirmed accessible
+const EL_VOICE_PRIMARY  = process.env["ELEVENLABS_VOICE_ID"] ?? "ohvvU75FpBEB8fdaLOMh";
+const EL_VOICE_FALLBACK = "EXAVITQu4vr4xnSDxMaL"; // Bella — always accessible on free plan
 const EL_MODEL = "eleven_multilingual_v2";
 
-const EL_KEYS: string[] = [
-  process.env["ELEVENLABS_API_KEY"] ?? "",
-  process.env["ELEVENLABS_API_KEY_1"] ?? "",
-  process.env["ELEVENLABS_API_KEY_2"] ?? "",
-].filter(Boolean);
+// Read keys per-request so no restart needed after secrets are added
+function getElevenLabsKeys(): string[] {
+  return [
+    process.env["ELEVENLABS_API_KEY_1"] ?? "",
+    process.env["ELEVENLABS_API_KEY_2"] ?? "",
+    process.env["ELEVENLABS_API_KEY"]   ?? "",
+  ].filter(Boolean);
+}
 
 async function tryTTS(apiKey: string, voiceId: string, text: string) {
   const response = await fetch(
@@ -40,13 +43,16 @@ router.post("/tts", async (req, res) => {
     return;
   }
 
-  if (EL_KEYS.length === 0) {
-    res.status(500).json({ error: "ElevenLabs API keys not configured." });
+  const elKeys = getElevenLabsKeys();
+
+  if (elKeys.length === 0) {
+    // No keys — tell frontend to use Web Speech fallback
+    res.status(503).json({ error: "ElevenLabs not configured — use Web Speech fallback." });
     return;
   }
 
-  // Try each key × each voice (primary first, then fallback)
-  for (const key of EL_KEYS) {
+  // Try KEY_1 first, then KEY_2; for each key try primary voice then fallback voice
+  for (const key of elKeys) {
     for (const voiceId of [EL_VOICE_PRIMARY, EL_VOICE_FALLBACK]) {
       try {
         const response = await tryTTS(key, voiceId, text);
@@ -57,8 +63,11 @@ router.post("/tts", async (req, res) => {
           res.send(Buffer.from(audioBuffer));
           return;
         }
-      } catch {
-        // network error — try next combination
+        // Log non-ok for debugging
+        const errBody = await response.text().catch(() => "");
+        console.warn(`[TTS] key ending ...${key.slice(-6)} voice ${voiceId} → ${response.status}: ${errBody.slice(0, 120)}`);
+      } catch (e) {
+        console.warn(`[TTS] network error:`, e);
       }
     }
   }
