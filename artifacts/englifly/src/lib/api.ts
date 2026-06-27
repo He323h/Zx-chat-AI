@@ -1,9 +1,7 @@
 // Local API stubs — replaces @workspace/api-client-react for Vercel deployment
-// AI chat calls OpenAI directly from browser using VITE_OPENAI_API_KEY
+// AI chat calls /api/chat (Vercel serverless function) which proxies to OpenAI
 
 import { useMutation, useQuery } from "@tanstack/react-query";
-
-const OPENAI_KEY = import.meta.env.VITE_OPENAI_API_KEY ?? "";
 
 // ─── Query Keys ───────────────────────────────────────────────
 export function getGetUserProfileQueryKey(p: { uid: string }) {
