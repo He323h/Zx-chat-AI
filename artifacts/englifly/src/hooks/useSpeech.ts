@@ -1,60 +1,62 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 
-// ─── AudioContext singleton — unlocked on first user gesture ─────────────────
-let _audioCtx: AudioContext | null = null;
+const EL_VOICE_ID = "EXAVITQu4vr4xnSDxMaL";
+const EL_MODEL    = "eleven_multilingual_v2";
 
-function getAudioContext(): AudioContext {
-  if (!_audioCtx) {
-    _audioCtx = new AudioContext();
-  }
-  return _audioCtx;
+function getElevenLabsKeys(): string[] {
+  return [
+    (import.meta.env.VITE_ELEVENLABS_API_KEY_1 as string) ?? "",
+    (import.meta.env.VITE_ELEVENLABS_API_KEY_2 as string) ?? "",
+  ].filter(Boolean);
 }
 
-// Call this on any user interaction (send button, mic click, key press)
-// so the AudioContext is unlocked BEFORE we try to auto-play.
-export function unlockAudio(): void {
-  const ctx = getAudioContext();
-  if (ctx.state === "suspended") {
-    ctx.resume().catch(() => {});
-  }
-}
+// No-op kept so chat.tsx import doesn't break
+export function unlockAudio(): void {}
 
-// ─── Play audio blob via AudioContext (bypasses autoplay policy) ─────────────
-async function playBlob(
+// ─── Play audio blob via simple new Audio() ───────────────────────────────────
+function playAudioBlob(
   blob: Blob,
   onStart: () => void,
   onEnd: () => void
-): Promise<() => void> {
-  const ctx = getAudioContext();
-  if (ctx.state === "suspended") await ctx.resume();
+): { stop: () => void } {
+  const url    = URL.createObjectURL(blob);
+  const audio  = new Audio(url);
 
-  const arrayBuffer = await blob.arrayBuffer();
-  const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+  audio.onplay  = () => onStart();
+  audio.onended = () => { onEnd(); URL.revokeObjectURL(url); };
+  audio.onerror = () => { onEnd(); URL.revokeObjectURL(url); };
 
-  const source = ctx.createBufferSource();
-  source.buffer = audioBuffer;
-  source.connect(ctx.destination);
+  audio.play().catch(() => { onEnd(); URL.revokeObjectURL(url); });
 
-  onStart();
-  source.start(0);
-
-  source.onended = () => onEnd();
-
-  // Return a stop function
-  return () => {
-    try { source.stop(); } catch {}
-    onEnd();
+  return {
+    stop() {
+      audio.pause();
+      audio.currentTime = 0;
+      onEnd();
+      URL.revokeObjectURL(url);
+    },
   };
 }
 
-// ─── TTS via backend proxy ────────────────────────────────────────────────────
-async function fetchTTS(text: string): Promise<Blob> {
-  const res = await fetch("/api/tts", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
-  });
-  if (!res.ok) throw new Error(`TTS ${res.status}`);
+// ─── ElevenLabs TTS (direct from browser) ────────────────────────────────────
+async function fetchElevenLabs(text: string, apiKey: string): Promise<Blob> {
+  const res = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${EL_VOICE_ID}`,
+    {
+      method: "POST",
+      headers: {
+        "xi-api-key":   apiKey,
+        "Content-Type": "application/json",
+        Accept:         "audio/mpeg",
+      },
+      body: JSON.stringify({
+        text,
+        model_id: EL_MODEL,
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 },
+      }),
+    }
+  );
+  if (!res.ok) throw new Error(`ElevenLabs ${res.status}`);
   return res.blob();
 }
 
@@ -97,9 +99,9 @@ function getVoicesReady(): Promise<SpeechSynthesisVoice[]> {
 
 // ─── Hook types ───────────────────────────────────────────────────────────────
 interface UseSpeechReturn {
-  isListening: boolean;
-  transcript:  string;
-  isSpeaking:  boolean;
+  isListening:     boolean;
+  transcript:      string;
+  isSpeaking:      boolean;
   startListening:  () => void;
   stopListening:   () => void;
   speak:           (text: string) => void;
@@ -113,9 +115,9 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
   const [transcript,  setTranscript]  = useState("");
   const [isSpeaking,  setIsSpeaking]  = useState(false);
 
-  const recognitionRef      = useRef<any>(null);
-  const finalTranscriptRef  = useRef("");
-  const stopCurrentRef      = useRef<(() => void) | null>(null); // stop function for AudioContext source
+  const recognitionRef       = useRef<any>(null);
+  const finalTranscriptRef   = useRef("");
+  const stopCurrentRef       = useRef<(() => void) | null>(null);
   const onTranscriptReadyRef = useRef(onTranscriptReady);
   useEffect(() => { onTranscriptReadyRef.current = onTranscriptReady; }, [onTranscriptReady]);
 
@@ -125,7 +127,7 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
       : null;
   const isSupported = !!SpeechRecognitionClass;
 
-  // ── Stop audio (AudioContext or Web Speech) ──────────────────────────────
+  // ── Stop audio ───────────────────────────────────────────────────────────
   const stopSpeaking = useCallback(() => {
     if (stopCurrentRef.current) {
       stopCurrentRef.current();
@@ -155,31 +157,31 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
   // ── Main speak function ──────────────────────────────────────────────────
   const speak = useCallback(async (text: string) => {
     // Stop anything currently playing
-    if (stopCurrentRef.current) {
-      stopCurrentRef.current();
-      stopCurrentRef.current = null;
-    }
+    if (stopCurrentRef.current) { stopCurrentRef.current(); stopCurrentRef.current = null; }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     setIsSpeaking(false);
 
-    // Try ElevenLabs TTS via backend
-    try {
-      const blob = await fetchTTS(text);
-      const stopFn = await playBlob(
-        blob,
-        () => setIsSpeaking(true),
-        () => {
-          setIsSpeaking(false);
-          if (stopCurrentRef.current === stopFn) stopCurrentRef.current = null;
-        }
-      );
-      stopCurrentRef.current = stopFn;
-      return; // ElevenLabs succeeded
-    } catch {
-      // fall through to Web Speech
+    // Try ElevenLabs keys in order
+    const keys = getElevenLabsKeys();
+    for (const key of keys) {
+      try {
+        const blob    = await fetchElevenLabs(text, key);
+        const player  = playAudioBlob(
+          blob,
+          () => setIsSpeaking(true),
+          () => {
+            setIsSpeaking(false);
+            if (stopCurrentRef.current === player.stop) stopCurrentRef.current = null;
+          }
+        );
+        stopCurrentRef.current = player.stop;
+        return;
+      } catch {
+        // try next key
+      }
     }
 
-    // Web Speech fallback
+    // Web Speech fallback (no ElevenLabs keys or all failed)
     webSpeechFallback(text);
   }, [webSpeechFallback]);
 
@@ -196,12 +198,10 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
   const startListening = useCallback(() => {
     if (!SpeechRecognitionClass) return;
 
-    // Stop AI voice before mic starts
     if (stopCurrentRef.current) { stopCurrentRef.current(); stopCurrentRef.current = null; }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     setIsSpeaking(false);
 
-    // Reset transcript
     finalTranscriptRef.current = "";
     setTranscript("");
 
@@ -211,7 +211,7 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
     }
 
     const recognition = new SpeechRecognitionClass();
-    recognitionRef.current = recognition;
+    recognitionRef.current     = recognition;
     recognition.continuous     = false;
     recognition.interimResults = true;
     recognition.lang           = "en-IN";
