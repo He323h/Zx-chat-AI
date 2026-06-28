@@ -51,9 +51,9 @@ function getUsedMinutes(uid: string) {
 function getDailyLimit(uid: string): number {
   const p = loadProfile(uid);
   const sub = p?.subscription ?? "trial";
-  if (sub === "pro") return 240;
-  if (sub === "basic") return 60;
-  return 15;
+  if (sub === "pro") return 9999;
+  if (sub === "basic") return 9999;
+  return 9999; // unlimited for all users
 }
 
 export function useGetTodayUsage(params: { uid: string }, opts?: { query?: { enabled?: boolean; queryKey?: unknown[] } }) {

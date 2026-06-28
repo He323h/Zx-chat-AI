@@ -382,8 +382,6 @@ export default function Chat() {
     return "idle";
   }
 
-  const limitReached = usage?.limitReached ?? false;
-
   return (
     <>
       {callMode && (
@@ -418,7 +416,6 @@ export default function Chat() {
             {isSupported && (
               <button
                 onClick={enterCallMode}
-                disabled={limitReached}
                 title="Start Voice Call"
                 className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#f0f4f8] transition-colors disabled:opacity-40">
                 <Phone size={17} style={{ color: "#22c55e" }} />
@@ -437,17 +434,6 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* Limit banner */}
-        {limitReached && (
-          <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-center shrink-0">
-            <p className="text-amber-800 text-sm font-semibold">
-              ⏳ You've used today's practice time!
-            </p>
-            <p className="text-amber-700 text-xs mt-0.5">
-              Come back in <span className="font-bold">{midnightCountdown()}</span> when it resets at midnight.
-            </p>
-          </div>
-        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
