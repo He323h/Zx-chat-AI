@@ -32,17 +32,11 @@ export default async function handler(req, res) {
   if (!message) return res.status(400).json({ error: "message is required" });
 
   const keys = [
-    process.env.OPENROUTER_API_KEY_1,
-    process.env.OPENROUTER_API_KEY_2,
+    process.env.GROQ_API_KEY_1,
+    process.env.GROQ_API_KEY_2,
   ].filter(Boolean);
 
   if (keys.length === 0) return res.status(500).json({ error: "No API keys" });
-
-  const models = [
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "openrouter/owl-alpha",
-    "google/gemma-3-4b-it:free",
-  ];
 
   const systemPrompt = SYSTEM_PROMPTS[category] ?? SYSTEM_PROMPTS.casual;
   const maxTokens = category === "vocabulary" ? 500 : category === "actor" ? 700 : 150;
@@ -57,35 +51,37 @@ export default async function handler(req, res) {
   ];
 
   for (const key of keys) {
-    for (const model of models) {
-      try {
-        const response = await fetch(
-          "https://openrouter.ai/api/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${key}`,
-              "Content-Type": "application/json",
-              "HTTP-Referer": "https://zx-chat-ai.vercel.app",
-            },
-            body: JSON.stringify({ model, messages, max_tokens: maxTokens }),
-          }
-        );
+    try {
+      const response = await fetch(
+        "https://api.groq.com/openai/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages,
+            max_tokens: maxTokens,
+            temperature: 0.7,
+          }),
+        }
+      );
 
-        const data = await response.json();
-        if (!response.ok || data.error) throw new Error(data.error?.message ?? `HTTP ${response.status}`);
+      const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.error?.message ?? `HTTP ${response.status}`);
 
-        const reply = data.choices?.[0]?.message?.content ?? "";
-        if (!reply) throw new Error("Empty response");
+      const reply = data.choices?.[0]?.message?.content ?? "";
+      if (!reply) throw new Error("Empty response");
 
-        console.log("Success:", model);
-        return res.json({ message: reply });
-      } catch (e) {
-        console.log(`Failed ${model}:`, e.message);
-        continue;
-      }
+      console.log("Groq success!");
+      return res.json({ message: reply });
+    } catch (e) {
+      console.log(`Groq key failed:`, e.message);
+      continue;
     }
   }
 
-  return res.status(500).json({ error: "All models failed" });
+  return res.status(500).json({ error: "All keys failed" });
 }
