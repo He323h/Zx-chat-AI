@@ -1,10 +1,10 @@
-const EL_VOICE_PRIMARY  = "ohvvU75FpBEB8fdaLOMh";
+const EL_VOICE_PRIMARY  = process.env["VITE_ELEVENLABS_VOICE_ID"] ?? "ohvvU75FpBEB8fdaLOMh";
 const EL_VOICE_FALLBACK = "EXAVITQu4vr4xnSDxMaL";
 const EL_MODEL = "eleven_multilingual_v2";
 
 const EL_KEYS = [
-  process.env["ELEVENLABS_API_KEY_1"] ?? "",
-  process.env["ELEVENLABS_API_KEY_2"] ?? "",
+  process.env["VITE_ELEVENLABS_API_KEY_1"] ?? process.env["ELEVENLABS_API_KEY_1"] ?? "",
+  process.env["VITE_ELEVENLABS_API_KEY_2"] ?? process.env["ELEVENLABS_API_KEY_2"] ?? "",
 ].filter(Boolean);
 
 export default async function handler(req, res) {
@@ -19,9 +19,7 @@ export default async function handler(req, res) {
   if (!text) return res.status(400).json({ error: "text is required" });
 
   if (EL_KEYS.length === 0) {
-    return res.status(500).json({
-      error: "ElevenLabs API keys not configured. Add ELEVENLABS_API_KEY_1 and ELEVENLABS_API_KEY_2 to Vercel environment variables.",
-    });
+    return res.status(500).json({ error: "ElevenLabs API keys not configured." });
   }
 
   for (const key of EL_KEYS) {
@@ -43,7 +41,6 @@ export default async function handler(req, res) {
             }),
           }
         );
-
         if (response.ok) {
           const audioBuffer = await response.arrayBuffer();
           res.setHeader("Content-Type", "audio/mpeg");
@@ -51,9 +48,7 @@ export default async function handler(req, res) {
           res.status(200).send(Buffer.from(audioBuffer));
           return;
         }
-      } catch {
-        // try next combination
-      }
+      } catch { /* try next */ }
     }
   }
 

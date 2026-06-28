@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation, useSearch } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSpeech, unlockAudio } from "@/hooks/useSpeech";
+import { useSpeech } from "@/hooks/useSpeech";
 import { recordPracticeNow } from "@/lib/notifications";
 import {
   useSendMessage,
@@ -99,97 +99,87 @@ interface CallModeOverlayProps {
   onEndCall: () => void;
 }
 
+function useCallTimer(active: boolean) {
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    if (!active) { setSeconds(0); return; }
+    const t = setInterval(() => setSeconds(s => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [active]);
+  const m = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const s = String(seconds % 60).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
 function CallModeOverlay({ phase, meta, onEndCall }: CallModeOverlayProps) {
+  const timer = useCallTimer(true);
+
   const phaseLabel =
     phase === "listening" ? "Listening…" :
     phase === "thinking"  ? "Thinking…" :
     phase === "speaking"  ? "Speaking…" :
-    "Get ready…";
+    "Ready…";
 
   const phaseColor =
     phase === "listening" ? "#22c55e" :
-    phase === "speaking"  ? "hsl(var(--primary))" :
+    phase === "speaking"  ? "#3b82f6" :
     phase === "thinking"  ? "#f59e0b" :
     "#94a3b8";
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-between"
-      style={{ background: "linear-gradient(180deg, #0d1b2e 0%, #1a2f4e 100%)" }}>
+      style={{ background: "linear-gradient(180deg,#0a0f1e 0%,#0d1b2e 100%)" }}>
 
-      <div className="w-full px-6 pt-14 pb-4 text-center">
-        <p className="text-white/60 text-sm font-medium tracking-wide uppercase">ZX-Chat AI Tutor</p>
-        <p className="text-white text-xl font-semibold mt-1">{meta.label}</p>
-        <p className="text-white/40 text-sm mt-0.5">Voice Practice Session</p>
+      {/* Top: name */}
+      <div className="w-full px-6 pt-14 text-center">
+        <p className="text-white/50 text-xs font-medium tracking-widest uppercase mb-1">ZX-Chat AI</p>
+        <p className="text-white text-xl font-bold">{meta.label}</p>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center gap-8">
+      {/* Center: avatar + timer + phase */}
+      <div className="flex flex-col items-center gap-6">
+        {/* Pulse rings */}
         <div className="relative flex items-center justify-center">
           {(phase === "speaking" || phase === "listening") && (
             <>
-              <div className="absolute w-52 h-52 rounded-full call-ring-1"
-                style={{ background: `${phaseColor}18` }} />
-              <div className="absolute w-40 h-40 rounded-full call-ring-2"
-                style={{ background: `${phaseColor}28` }} />
+              <div className="absolute w-48 h-48 rounded-full animate-ping opacity-10"
+                style={{ background: phaseColor }} />
+              <div className="absolute w-36 h-36 rounded-full animate-pulse opacity-20"
+                style={{ background: phaseColor }} />
             </>
           )}
-          <div className="w-32 h-32 rounded-full flex items-center justify-center text-5xl shadow-2xl relative z-10 call-avatar"
-            style={{
-              background: `linear-gradient(135deg, hsl(var(--primary)), #0a85cc)`,
-              boxShadow: phase === "speaking" || phase === "listening"
-                ? `0 0 40px ${phaseColor}60, 0 0 0 2px ${phaseColor}80`
-                : "0 0 40px rgba(30,120,200,0.3)",
-            }}>
+          <div className="w-28 h-28 rounded-full flex items-center justify-center text-5xl relative z-10 shadow-2xl"
+            style={{ background: "linear-gradient(135deg,#1565c0,#1a8fd1)" }}>
             {meta.emoji}
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full call-phase-dot" style={{ background: phaseColor }} />
-            <span className="text-white text-lg font-medium">{phaseLabel}</span>
-          </div>
+        {/* Call timer — the main thing user sees */}
+        <p className="text-white text-5xl font-mono font-light tracking-widest tabular-nums">
+          {timer}
+        </p>
 
-          {phase === "speaking" && (
-            <div className="flex items-end gap-1 h-8">
-              {[3, 5, 7, 5, 8, 4, 6, 3].map((h, i) => (
-                <div key={i} className="w-1.5 rounded-full call-bar"
-                  style={{ height: `${h * 4}px`, background: "hsl(var(--primary))", animationDelay: `${i * 0.1}s` }} />
-              ))}
-            </div>
-          )}
-
-          {phase === "listening" && (
-            <div className="flex items-center gap-1.5">
-              {[1, 2, 3, 2, 1].map((_, i) => (
-                <div key={i} className="w-1 rounded-full call-listen-bar"
-                  style={{ background: "#22c55e", animationDelay: `${i * 0.15}s` }} />
-              ))}
-            </div>
-          )}
-
-          {phase === "thinking" && (
-            <div className="flex gap-1.5">
-              {[0, 1, 2].map(i => (
-                <div key={i} className="w-2 h-2 rounded-full bg-amber-400 typing-dot"
-                  style={{ animationDelay: `${i * 0.15}s` }} />
-              ))}
-            </div>
-          )}
+        {/* Phase pill */}
+        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full"
+          style={{ background: `${phaseColor}22`, border: `1px solid ${phaseColor}44` }}>
+          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: phaseColor }} />
+          <span className="text-sm font-medium" style={{ color: phaseColor }}>{phaseLabel}</span>
         </div>
 
-        <p className="text-white/40 text-xs text-center px-8">
-          Speak naturally — ZX-Chat AI will listen and respond automatically
+        <p className="text-white/30 text-xs text-center px-10 leading-relaxed">
+          Bolne ke baad ruko — AI automatically sun raha hai
         </p>
       </div>
 
+      {/* End call button */}
       <div className="pb-16 flex flex-col items-center gap-3">
         <button
           onClick={onEndCall}
-          className="w-20 h-20 rounded-full flex items-center justify-center shadow-xl transition-transform active:scale-95"
+          className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
           style={{ background: "#ef4444" }}>
-          <PhoneOff size={30} className="text-white" />
+          <PhoneOff size={28} className="text-white" />
         </button>
-        <span className="text-white/50 text-sm">End Call</span>
+        <span className="text-white/40 text-sm">Call khatam karo</span>
       </div>
     </div>
   );
@@ -252,7 +242,6 @@ export default function Chat() {
       const trimmed = text.trim();
       if (!trimmed || !uid || usage?.limitReached) return;
 
-      unlockAudio();
       setInputText("");
       recordPracticeNow();
       const userMsg: Message = { id: `u-${Date.now()}`, role: "user", content: trimmed };
@@ -306,7 +295,6 @@ export default function Chat() {
     startListening, stopListening,
     speak, stopSpeaking,
     isSupported,
-    activateCallMode, startCallMode, stopCallMode,
   } = useSpeech(handleSend);
 
   // Keep refs in sync with state
@@ -330,7 +318,6 @@ export default function Chat() {
           // callMode=true and automatically starts listening. Perfect loop.
           callModeRef.current = true;
           setCallModeState(true);
-          activateCallMode();        // flag only, no audio interference
           speak(starterRef.current); // play greeting → auto-listen when done
         } else {
           if (!isMuted) speak(starterRef.current);
@@ -353,7 +340,6 @@ export default function Chat() {
   }, [uid]);
 
   function handleMicClick() {
-    unlockAudio();
     if (isListening) {
       stopListening();
     } else {
@@ -365,13 +351,15 @@ export default function Chat() {
   function enterCallMode() {
     callModeRef.current = true;
     setCallModeState(true);
-    startCallMode(); // tells hook to activate flag + start listening
+    stopSpeaking();
+    startListening();
   }
 
   function exitCallMode() {
     callModeRef.current = false;
     setCallModeState(false);
-    stopCallMode(); // tells hook to stop everything and clear flag
+    stopListening();
+    stopSpeaking();
     if (startInVoiceMode) setLocation("/home");
   }
 
@@ -459,10 +447,10 @@ export default function Chat() {
         <div className="bg-white border-t border-border px-3 py-3 shrink-0 shadow-lg">
           <div className="flex items-center gap-2">
             {isSupported && (
-              <button onClick={handleMicClick} disabled={limitReached}
+              <button onClick={handleMicClick} disabled={!!usage?.limitReached}
                 className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all
                   ${isListening ? "text-white mic-pulsing" : "bg-[#f0f4f8] text-muted-foreground hover:bg-[#e0e8f0]"}
-                  ${limitReached ? "opacity-40 cursor-not-allowed" : ""}`}
+                  ${usage?.limitReached ? "opacity-40 cursor-not-allowed" : ""}`}
                 style={isListening ? { background: "hsl(var(--primary))" } : {}}>
                 {isListening ? <Mic size={18} /> : <MicOff size={18} />}
               </button>
@@ -472,13 +460,13 @@ export default function Chat() {
               value={inputText}
               onChange={e => setInputText(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(inputText); } }}
-              placeholder={isListening ? "Listening…" : limitReached ? "Daily limit reached" : "Type a message…"}
-              disabled={limitReached || isListening}
+              placeholder={isListening ? "Listening…" : usage?.limitReached ? "Daily limit reached" : "Type a message…"}
+              disabled={!!usage?.limitReached || isListening}
               className="flex-1 h-10 bg-[#f0f4f8] rounded-full px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 disabled:opacity-50 border-none"
             />
             <button
               onClick={() => handleSend(inputText)}
-              disabled={!inputText.trim() || limitReached || sendMessage.isPending}
+              disabled={!inputText.trim() || !!usage?.limitReached || sendMessage.isPending}
               className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white transition-all disabled:opacity-40"
               style={{ background: "hsl(var(--primary))" }}>
               <Send size={16} />

@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGetUserProfile, useGetTodayUsage, getGetUserProfileQueryKey, getGetTodayUsageQueryKey } from "@/lib/api";
-import { Settings, Crown, Users, X } from "lucide-react";
+import { Settings, Crown, Users, Mic, ChevronRight, X } from "lucide-react";
 import { useState } from "react";
 import { getStats, getAccuracy } from "@/lib/dailyStats";
 
@@ -26,6 +26,11 @@ export default function Home() {
   const streak = profile?.streak ?? 0;
   const subscription = profile?.subscription ?? "trial";
   const remainingMin = usage?.remainingMinutes === 9999 ? null : usage?.remainingMinutes;
+
+  function goToChat() {
+    const hasLevel = localStorage.getItem("ef_level") || profile?.englishLevel;
+    setLocation(hasLevel ? "/chat?category=casual" : "/level-select?category=casual");
+  }
 
   return (
     <div className="min-h-screen pb-8" style={{ background: "#f2f5f9" }}>
@@ -75,9 +80,60 @@ export default function Home() {
 
       <div className="max-w-lg mx-auto px-4 pt-5 space-y-4">
 
+        {/* ── English with Me — BIG featured card ── */}
+        <div className="fade-up">
+          <button
+            onClick={goToChat}
+            className="w-full rounded-2xl overflow-hidden shadow-md active:scale-[0.98] transition-all duration-150 text-left"
+            style={{ background: "linear-gradient(135deg,#0e5fa8,#1a8fd1)" }}>
+            <div className="px-5 py-5 flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shadow-lg shrink-0"
+                style={{ background: "rgba(255,255,255,0.2)" }}>
+                💬
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-bold text-lg leading-tight">English with Me</p>
+                <p className="text-white/70 text-sm mt-0.5">AI teacher se English seekho</p>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <span className="text-[11px] font-semibold text-white/90 bg-white/20 px-2 py-0.5 rounded-full">
+                    🤖 Groq AI
+                  </span>
+                  <span className="text-[11px] font-semibold text-white/90 bg-white/20 px-2 py-0.5 rounded-full">
+                    🇮🇳 Hindi support
+                  </span>
+                </div>
+              </div>
+              <ChevronRight size={20} className="text-white/60 shrink-0" />
+            </div>
+          </button>
+        </div>
+
+        {/* ── Voice Call card ── */}
+        <div className="fade-up" style={{ animationDelay: "0.03s" }}>
+          <button
+            onClick={() => setLocation("/chat?category=casual&mode=voice")}
+            className="w-full rounded-2xl overflow-hidden shadow-md active:scale-[0.98] transition-all duration-150 text-left"
+            style={{ background: "linear-gradient(135deg,#6d28d9,#7c3aed)" }}>
+            <div className="px-5 py-4 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shrink-0"
+                style={{ background: "rgba(255,255,255,0.2)" }}>
+                <Mic size={22} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-bold text-base leading-tight">Voice Call Practice</p>
+                <p className="text-white/70 text-sm mt-0.5">AI se bol ke English seekho</p>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-white/80 text-xs font-medium">Live</span>
+              </div>
+            </div>
+          </button>
+        </div>
+
         {/* ── Feature Grid 2x2 ── */}
-        <div className="fade-up" style={{ animationDelay: "0.05s" }}>
-          <p className="text-[13px] font-bold text-slate-500 uppercase tracking-wide mb-2.5">Features</p>
+        <div className="fade-up" style={{ animationDelay: "0.06s" }}>
+          <p className="text-[13px] font-bold text-slate-500 uppercase tracking-wide mb-2.5">More Features</p>
           <div className="grid grid-cols-2 gap-2.5">
 
             {/* Vocabulary */}
@@ -124,6 +180,7 @@ export default function Home() {
                 <p className="text-[11px] text-slate-400 mt-0.5">Random partner se baat</p>
               </div>
             </button>
+
           </div>
         </div>
 
