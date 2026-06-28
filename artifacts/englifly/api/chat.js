@@ -31,7 +31,10 @@ export default async function handler(req, res) {
   const { message, category, history } = req.body ?? {};
   if (!message) return res.status(400).json({ error: "message is required" });
 
-  const key = process.env.VITE_GEMINI_API_KEY_1;
+  const key = process.env.GEMINI_API_KEY 
+           || process.env.VITE_GEMINI_API_KEY_1
+           || process.env.VITE_GEMINI_API_KEY_2;
+
   if (!key) return res.status(500).json({ error: "Gemini API key not found" });
 
   const systemPrompt = SYSTEM_PROMPTS[category] ?? SYSTEM_PROMPTS.casual;
@@ -65,7 +68,11 @@ export default async function handler(req, res) {
     );
 
     const data = await response.json();
-    if (!response.ok || data.error) throw new Error(data.error?.message ?? `HTTP ${response.status}`);
+    console.log("Gemini status:", response.status);
+    
+    if (!response.ok || data.error) {
+      throw new Error(data.error?.message ?? `HTTP ${response.status}`);
+    }
 
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     if (!reply) throw new Error("Empty response");
