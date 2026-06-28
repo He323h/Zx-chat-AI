@@ -101,7 +101,7 @@ export default async function handler(req, res) {
           "HTTP-Referer": "https://zx-chat-ai.vercel.app",
         },
         body: JSON.stringify({
-          model: "mistralai/mistral-7b-instruct:free",
+          model: "meta-llama/llama-3.2-3b-instruct:free",
           messages,
           max_tokens: maxTokens,
         }),
