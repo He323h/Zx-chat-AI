@@ -212,22 +212,23 @@ export default function Chat() {
   const [isMuted, setIsMuted] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [started, setStarted] = useState(false);
-
   const [callMode, setCallModeState] = useState(false);
-  const callModeRef = useRef(false);
-  const isTypingRef = useRef(false);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const sessionStarted = useRef(false);
+  // Ref so handleSend (useCallback) can check call mode without stale closure
+  const callModeRef = useRef(false);
+  const isMutedRef  = useRef(false);
+
+  const messagesEndRef  = useRef<HTMLDivElement>(null);
+  const sessionStarted  = useRef(false);
 
   const sendMessage = useSendMessage();
-  const trackUsage = useTrackUsage();
+  const trackUsage  = useTrackUsage();
 
   const { data: profile } = useGetUserProfile(
     { uid },
     { query: { enabled: !!uid, queryKey: getGetUserProfileQueryKey({ uid }) } }
   );
-  const { data: usage, refetch: refetchUsage } = useGetTodayUsage(
+  const { data: usage } = useGetTodayUsage(
     { uid },
     { query: { enabled: !!uid, queryKey: getGetTodayUsageQueryKey({ uid }) } }
   );
@@ -236,7 +237,6 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // Track session start (once per mount)
   useEffect(() => {
     if (!sessionStarted.current) {
       sessionStarted.current = true;
@@ -246,20 +246,18 @@ export default function Chat() {
 
   const starterRef = useRef(pickStarter(meta.starters));
 
+  // handleSend is stable — reads mutable refs for callMode & isMuted
   const handleSend = useCallback(
     (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || !uid || usage?.limitReached) return;
 
-      unlockAudio(); // unlock AudioContext on user gesture so auto-play works
+      unlockAudio();
       setInputText("");
       recordPracticeNow();
       const userMsg: Message = { id: `u-${Date.now()}`, role: "user", content: trimmed };
       setMessages(prev => [...prev, userMsg]);
       setIsTyping(true);
-      isTypingRef.current = true;
-
-      // Track message count
       incrementMsgs();
 
       const historyForApi = messages
@@ -278,24 +276,19 @@ export default function Chat() {
         {
           onSuccess: (data) => {
             setIsTyping(false);
-            isTypingRef.current = false;
             const aiMsg: Message = { id: `a-${Date.now()}`, role: "assistant", content: data.message };
             setMessages(prev => [...prev, aiMsg]);
 
-            // Track corrections
-            if (hasCorrectionSignal(data.message)) {
-              incrementCorrections();
-            }
+            if (hasCorrectionSignal(data.message)) incrementCorrections();
 
-            // Auto-speak AI reply immediately — no button press needed
-            if (!isMuted || callModeRef.current) {
+            // Speak AI reply (call mode always speaks; normal mode respects mute)
+            if (!isMutedRef.current || callModeRef.current) {
               speak(data.message);
             }
             queryClient.invalidateQueries({ queryKey: getGetTodayUsageQueryKey({ uid }) });
           },
           onError: () => {
             setIsTyping(false);
-            isTypingRef.current = false;
             setMessages(prev => [...prev, {
               id: `e-${Date.now()}`, role: "assistant",
               content: "Sorry, I had trouble responding. Please try again!",
@@ -304,51 +297,50 @@ export default function Chat() {
         }
       );
     },
-    [uid, messages, isMuted, category, usage?.limitReached]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [uid, messages, category, usage?.limitReached]
   );
 
-  const { isListening, transcript, isSpeaking, startListening, stopListening, speak, stopSpeaking, isSupported } =
-    useSpeech(handleSend);
+  const {
+    isListening, transcript, isSpeaking,
+    startListening, stopListening,
+    speak, stopSpeaking,
+    isSupported,
+    activateCallMode, startCallMode, stopCallMode,
+  } = useSpeech(handleSend);
 
-  // Sync transcript → input while listening
+  // Keep refs in sync with state
+  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+
+  // Sync live transcript into input box while listening
   useEffect(() => {
     if (isListening) setInputText(transcript);
   }, [transcript, isListening]);
-
-  // Auto-loop for call mode
-  useEffect(() => {
-    if (!callMode) return;
-    if (isListening || isSpeaking || isTyping) return;
-
-    const timer = setTimeout(() => {
-      if (callModeRef.current && !isListening && !isSpeaking && !isTypingRef.current) {
-        startListening();
-      }
-    }, 700);
-    return () => clearTimeout(timer);
-  }, [callMode, isListening, isSpeaking, isTyping]);
 
   // Greeting on mount
   useEffect(() => {
     if (!started) {
       setStarted(true);
-      const greeting: Message = {
-        id: "greeting",
-        role: "assistant",
-        content: starterRef.current,
-      };
-      setMessages([greeting]);
+      setMessages([{ id: "greeting", role: "assistant", content: starterRef.current }]);
+
       setTimeout(() => {
-        if (!isMuted) speak(starterRef.current);
-        // Auto-enter call mode if launched from Voice Practice button
         if (startInVoiceMode && isSupported) {
-          enterCallMode();
+          // activateCallMode ONLY sets the flag — does NOT stop audio or start listening.
+          // speak() will run the greeting; when it finishes, onSpeakDone() sees
+          // callMode=true and automatically starts listening. Perfect loop.
+          callModeRef.current = true;
+          setCallModeState(true);
+          activateCallMode();        // flag only, no audio interference
+          speak(starterRef.current); // play greeting → auto-listen when done
+        } else {
+          if (!isMuted) speak(starterRef.current);
         }
-      }, 600);
+      }, 800);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Usage tracking — 1 min heartbeat
+  // Usage tracking heartbeat
   useEffect(() => {
     if (!uid) return;
     const interval = setInterval(() => {
@@ -356,47 +348,41 @@ export default function Chat() {
         { data: { uid, minutes: 1 } },
         { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetTodayUsageQueryKey({ uid }) }) }
       );
-    }, 60000);
+    }, 60_000);
     return () => clearInterval(interval);
   }, [uid]);
 
   function handleMicClick() {
-    unlockAudio(); // unlock AudioContext on user gesture
+    unlockAudio();
     if (isListening) {
       stopListening();
     } else {
-      stopSpeaking(); // stop AI voice before user speaks
+      stopSpeaking();
       startListening();
     }
   }
 
   function enterCallMode() {
-    stopSpeaking();
-    stopListening();
     callModeRef.current = true;
     setCallModeState(true);
+    startCallMode(); // tells hook to activate flag + start listening
   }
 
   function exitCallMode() {
-    stopSpeaking();
-    stopListening();
     callModeRef.current = false;
     setCallModeState(false);
-    // Voice Practice launches with mode=voice — go home when call ends
-    if (startInVoiceMode) {
-      setLocation("/home");
-    }
+    stopCallMode(); // tells hook to stop everything and clear flag
+    if (startInVoiceMode) setLocation("/home");
   }
 
   function getCallPhase(): CallPhase {
     if (isListening) return "listening";
-    if (isTyping) return "thinking";
-    if (isSpeaking) return "speaking";
+    if (isTyping)    return "thinking";
+    if (isSpeaking)  return "speaking";
     return "idle";
   }
 
   const limitReached = usage?.limitReached ?? false;
-  const remainingMin = usage?.remainingMinutes === 9999 ? null : usage?.remainingMinutes;
 
   return (
     <>
