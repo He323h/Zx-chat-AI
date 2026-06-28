@@ -19,6 +19,7 @@ import {
 
 import {
   incrementSessions, incrementMsgs, incrementCorrections,
+  incrementVoiceSessions, addMinutesPracticed, addTopic, logActivity,
 } from "@/lib/dailyStats";
 
 interface Message {
@@ -313,6 +314,8 @@ export default function Chat() {
     if (!sessionStarted.current) {
       sessionStarted.current = true;
       incrementSessions();
+      addTopic(meta.label);
+      logActivity("chat", meta.label);
     }
   }, []);
 
@@ -415,7 +418,7 @@ export default function Chat() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Usage tracking heartbeat
+  // Usage tracking heartbeat — also updates practice minutes
   useEffect(() => {
     if (!uid) return;
     const interval = setInterval(() => {
@@ -423,23 +426,27 @@ export default function Chat() {
         { data: { uid, minutes: 1 } },
         { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetTodayUsageQueryKey({ uid }) }) }
       );
+      addMinutesPracticed(1);
     }, 60_000);
     return () => clearInterval(interval);
   }, [uid]);
 
   // ── Mic permission request ────────────────────────────────────────────────────
+  const voiceCallStartRef = useRef<number | null>(null);
+
   async function requestMicAndEnterCall() {
     setMicPermError(null);
     setMicRequesting(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Permission granted — release this test stream, startListening will get its own
       stream.getTracks().forEach(t => t.stop());
       setShowMicPerm(false);
       setMicRequesting(false);
-      // Enter call mode — AI does NOT speak first; just start listening
       callModeRef.current = true;
       setCallModeState(true);
+      voiceCallStartRef.current = Date.now();
+      incrementVoiceSessions();
+      logActivity("voice", meta.label);
       startListening();
     } catch {
       setMicRequesting(false);
@@ -467,6 +474,11 @@ export default function Chat() {
     setCallModeState(false);
     stopListening();
     stopSpeaking();
+    if (voiceCallStartRef.current) {
+      const mins = Math.max(1, Math.round((Date.now() - voiceCallStartRef.current) / 60000));
+      addMinutesPracticed(mins);
+      voiceCallStartRef.current = null;
+    }
     if (startInVoiceMode) setLocation("/home");
   }
 

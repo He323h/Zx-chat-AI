@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, Send, RefreshCw } from "lucide-react";
 import { useSendMessage } from "@/lib/api";
+import { logActivity, addTopic, incrementMsgs } from "@/lib/dailyStats";
 
 interface Message {
   id: string;
@@ -36,6 +37,9 @@ export default function VocabularyPage() {
     const userMsg: Message = { id: `u-${Date.now()}`, role: "user", content: text };
     setMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
+    incrementMsgs();
+    addTopic(`Vocab: ${text.slice(0, 20)}`);
+    logActivity("vocab", text.slice(0, 30));
 
     const history = messages
       .filter(m => m.id !== "greeting")
