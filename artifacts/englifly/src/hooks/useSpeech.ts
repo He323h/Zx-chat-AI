@@ -142,7 +142,7 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
   // ── Process recorded audio → Groq Whisper ───────────────────────────────────
   const processAudio = useCallback(async (chunks: Blob[], mimeType: string) => {
     const blob = new Blob(chunks, { type: mimeType });
-    if (blob.size < 2000) { setTranscript(""); return; } // too short, ignore
+    if (blob.size < 500) { setTranscript(""); return; } // too short, ignore
 
     isProcessingRef.current = true;
     setTranscript("⏳ Processing…");
@@ -222,7 +222,7 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
         analyser.getByteFrequencyData(dataArray);
         const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
 
-        if (avg > 12) {
+        if (avg > 5) {
           // User is speaking
           hasSpeechRef.current = true;
           if (silenceTimerRef.current) {

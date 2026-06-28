@@ -300,10 +300,18 @@ export default function Chat() {
   // Keep refs in sync with state
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
 
-  // Sync live transcript into input box while listening
+  // Auto-restart listening after AI finishes speaking (call mode loop)
   useEffect(() => {
-    if (isListening) setInputText(transcript);
-  }, [transcript, isListening]);
+    if (!isSpeaking && callMode && !isListening && !isTyping && callModeRef.current) {
+      const t = setTimeout(() => {
+        if (callModeRef.current && !isListening) {
+          startListening();
+        }
+      }, 600);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [isSpeaking, callMode, isListening, isTyping, startListening]);
 
   // Greeting on mount
   useEffect(() => {
