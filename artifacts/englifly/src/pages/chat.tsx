@@ -28,6 +28,22 @@ interface Message {
   content: string;
 }
 
+// Extract only English sentences for TTS — strip Hindi lines
+function englishOnlyForTTS(text: string): string {
+  return text
+    .split("\n")
+    .filter(line => {
+      const t = line.trim();
+      if (!t) return false;
+      if (t.startsWith("📝 In English:")) return false; // translation label
+      if (t.startsWith("(Hindi:")) return false;         // Hindi explanation
+      if (t.startsWith("Hindi:")) return false;
+      return true;
+    })
+    .join(" ")
+    .trim();
+}
+
 const CATEGORY_META: Record<string, { label: string; emoji: string; starters: string[] }> = {
   travel:    { label: "Travel English",  emoji: "✈️", starters: [
     "Let's practice travel English! 🛫 You've just landed at a busy international airport. Tell me — where are you flying to today?",
@@ -270,9 +286,10 @@ export default function Chat() {
 
             if (hasCorrectionSignal(data.message)) incrementCorrections();
 
-            // Speak AI reply (call mode always speaks; normal mode respects mute)
+            // Speak AI reply — English only (strip Hindi lines for TTS)
             if (!isMutedRef.current || callModeRef.current) {
-              speak(data.message);
+              const ttsText = englishOnlyForTTS(data.message);
+              if (ttsText) speak(ttsText);
             }
             queryClient.invalidateQueries({ queryKey: getGetTodayUsageQueryKey({ uid }) });
           },

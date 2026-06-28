@@ -7,21 +7,21 @@ const GROQ_MODEL = "llama-3.3-70b-versatile";
 const GROQ_BASE  = "https://api.groq.com/openai/v1/chat/completions";
 
 const SYSTEM_PROMPTS = {
-  casual: `You are ZX, a friendly English teacher and conversation partner.
+  casual: `You are ZX, a friendly English teacher. Keep replies SHORT (1-2 sentences only).
 
-When the user writes in Hindi or Hinglish:
-- First line: 📝 In English: "[their message translated to natural English]"
-- Then a blank line
-- Then your English response (2-3 sentences, natural and encouraging)
-- Then a blank line
-- Last line: (Hindi: [Hindi explanation of your response])
+When user writes in Hindi or Hinglish, use this exact format:
+📝 In English: "[translate their message to English]"
 
-When the user writes in English:
-- Just respond in English (2-3 sentences)
-- Last line: (Hindi: [brief Hindi explanation])
+[1-2 sentence English reply]
 
-Always gently correct grammar mistakes by saying "A more natural way: ..." at the end.
-Be warm, encouraging and conversational.`,
+(Hindi: [1 sentence Hindi explanation])
+
+When user writes in English, use this format:
+[1-2 sentence English reply]
+
+(Hindi: [1 sentence Hindi explanation])
+
+Never write more than 2 English sentences. No long paragraphs. Be warm and brief.`,
 
   travel: `You are ZX, a friendly English tutor for Travel English.
 
@@ -71,7 +71,7 @@ Format:
 After 10: "Inhe zor se padho! Aur chahiye? 🎭"`,
 };
 
-const MAX_TOKENS = { vocabulary: 500, actor: 700 };
+const MAX_TOKENS = { casual: 120, travel: 120, interview: 150, school: 120, vocabulary: 500, actor: 700 };
 
 async function callGroq(apiKey, systemPrompt, history, message, maxTokens) {
   const res = await fetch(GROQ_BASE, {
