@@ -9,11 +9,11 @@ const EL_MODEL = "eleven_multilingual_v2";
 // Read keys per-request so no restart needed after secrets are added
 function getElevenLabsKeys(): string[] {
   return [
-    process.env["VITE_ELEVENLABS_API_KEY_1"] ?? "",
-    process.env["VITE_ELEVENLABS_API_KEY_2"] ?? "",
     process.env["ELEVENLABS_API_KEY_1"]       ?? "",
     process.env["ELEVENLABS_API_KEY_2"]       ?? "",
     process.env["ELEVENLABS_API_KEY"]         ?? "",
+    process.env["VITE_ELEVENLABS_API_KEY_1"] ?? "",
+    process.env["VITE_ELEVENLABS_API_KEY_2"] ?? "",
   ].filter(Boolean);
 }
 
