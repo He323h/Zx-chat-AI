@@ -40,7 +40,7 @@ interface UseSpeechReturn {
   isSpeaking:  boolean;
   startListening:  () => void;
   stopListening:   () => void;
-  speak:           (text: string) => void;
+  speak:           (text: string, onDone?: () => void) => void;
   stopSpeaking:    () => void;
   isSupported:     boolean;
 }
@@ -72,15 +72,26 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
   const isSupported = typeof window !== "undefined" && !!navigator?.mediaDevices?.getUserMedia;
 
   // ── Web Speech fallback (only for TTS, not for recognition) ─────────────────
-  const webSpeechFallback = useCallback((text: string) => {
-    if (!window.speechSynthesis) return;
+  const webSpeechFallback = useCallback((text: string, onDone?: () => void) => {
+    if (!window.speechSynthesis) { onDone?.(); return; }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate  = 1.0;
-    utterance.lang  = "en-IN";
+    utterance.volume = 1;
+    utterance.rate   = 0.95;
+    utterance.pitch  = 1;
+    utterance.lang   = "en-IN";
+    // Pick the best available English voice
+    const voices = window.speechSynthesis.getVoices();
+    const best =
+      voices.find(v => v.lang === "en-GB" && v.localService) ??
+      voices.find(v => v.lang === "en-US" && v.localService) ??
+      voices.find(v => v.lang === "en-IN") ??
+      voices.find(v => v.lang.startsWith("en")) ??
+      null;
+    if (best) utterance.voice = best;
     utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend   = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+    utterance.onend   = () => { setIsSpeaking(false); onDone?.(); };
+    utterance.onerror = () => { setIsSpeaking(false); onDone?.(); };
     window.speechSynthesis.speak(utterance);
   }, []);
 
@@ -100,7 +111,7 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
   }, []);
 
   // ── Speak via ElevenLabs → fallback Web Speech ───────────────────────────────
-  const speak = useCallback(async (text: string) => {
+  const speak = useCallback(async (text: string, onDone?: () => void) => {
     stopSpeaking();
     let blob: Blob | null = null;
     try { blob = await fetchTTS(text); } catch { blob = null; }
@@ -108,6 +119,7 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
     if (blob) {
       const url   = URL.createObjectURL(blob);
       const audio = new Audio(url);
+      audio.volume = 1;
       audioRef.current        = audio;
       audioBlobUrlRef.current = url;
       setIsSpeaking(true);
@@ -116,17 +128,19 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
         URL.revokeObjectURL(url);
         audioBlobUrlRef.current = null;
         if (audioRef.current === audio) audioRef.current = null;
+        onDone?.();
       };
       audio.onerror = () => {
         setIsSpeaking(false);
         URL.revokeObjectURL(url);
         audioBlobUrlRef.current = null;
         if (audioRef.current === audio) audioRef.current = null;
+        webSpeechFallback(text, onDone);
       };
-      audio.play().catch(() => { setIsSpeaking(false); webSpeechFallback(text); });
+      audio.play().catch(() => { setIsSpeaking(false); webSpeechFallback(text, onDone); });
       return;
     }
-    webSpeechFallback(text);
+    webSpeechFallback(text, onDone);
   }, [stopSpeaking, webSpeechFallback]);
 
   // ── Cleanup recording resources ──────────────────────────────────────────────
@@ -209,7 +223,7 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
       setIsListening(true);
       setTranscript("🎙️ Listening…");
 
-      // ── Silence detection via AudioContext ────────────────────────────────
+      // ── Silence detection via AudioContext ────────────────────────────
       const audioCtx = new AudioContext();
       audioContextRef.current = audioCtx;
       const source   = audioCtx.createMediaStreamSource(stream);

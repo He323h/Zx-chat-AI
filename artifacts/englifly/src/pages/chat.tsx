@@ -19,7 +19,6 @@ import {
 
 import {
   incrementSessions, incrementMsgs, incrementCorrections,
-  midnightCountdown,
 } from "@/lib/dailyStats";
 
 interface Message {
@@ -35,8 +34,8 @@ function englishOnlyForTTS(text: string): string {
     .filter(line => {
       const t = line.trim();
       if (!t) return false;
-      if (t.startsWith("📝 In English:")) return false; // translation label
-      if (t.startsWith("(Hindi:")) return false;         // Hindi explanation
+      if (t.startsWith("📝 In English:")) return false;
+      if (t.startsWith("(Hindi:")) return false;
       if (t.startsWith("Hindi:")) return false;
       return true;
     })
@@ -134,7 +133,7 @@ function CallModeOverlay({ phase, meta, onEndCall }: CallModeOverlayProps) {
     phase === "listening" ? "Listening…" :
     phase === "thinking"  ? "Thinking…" :
     phase === "speaking"  ? "Speaking…" :
-    "Ready…";
+    "Waiting…";
 
   const phaseColor =
     phase === "listening" ? "#22c55e" :
@@ -170,7 +169,7 @@ function CallModeOverlay({ phase, meta, onEndCall }: CallModeOverlayProps) {
           </div>
         </div>
 
-        {/* Call timer — the main thing user sees */}
+        {/* Call timer */}
         <p className="text-white text-5xl font-mono font-light tracking-widest tabular-nums">
           {timer}
         </p>
@@ -183,8 +182,17 @@ function CallModeOverlay({ phase, meta, onEndCall }: CallModeOverlayProps) {
         </div>
 
         <p className="text-white/30 text-xs text-center px-10 leading-relaxed">
-          Bolne ke baad ruko — AI automatically sun raha hai
+          {phase === "idle"
+            ? "Tap the mic below to start speaking"
+            : "Bolne ke baad ruko — AI automatically sun raha hai"}
         </p>
+
+        {/* Manual mic button when idle */}
+        {phase === "idle" && (
+          <div className="flex flex-col items-center gap-2 mt-2">
+            <p className="text-white/50 text-xs">Press to speak</p>
+          </div>
+        )}
       </div>
 
       {/* End call button */}
@@ -196,6 +204,59 @@ function CallModeOverlay({ phase, meta, onEndCall }: CallModeOverlayProps) {
           <PhoneOff size={28} className="text-white" />
         </button>
         <span className="text-white/40 text-sm">Call khatam karo</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Mic permission overlay shown before entering call mode ───────────────────
+interface MicPermOverlayProps {
+  onAllow: () => void;
+  onCancel: () => void;
+  error: string | null;
+  requesting: boolean;
+  meta: { label: string; emoji: string };
+}
+
+function MicPermOverlay({ onAllow, onCancel, error, requesting, meta }: MicPermOverlayProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-6"
+      style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(6px)" }}>
+      <div className="bg-[#0d1b2e] rounded-3xl p-8 max-w-sm w-full flex flex-col items-center gap-6 shadow-2xl border border-white/10">
+        {/* Icon */}
+        <div className="w-20 h-20 rounded-full flex items-center justify-center text-4xl shadow-lg"
+          style={{ background: "linear-gradient(135deg,#1565c0,#1a8fd1)" }}>
+          🎙️
+        </div>
+
+        <div className="text-center">
+          <p className="text-white text-lg font-bold mb-2">Microphone Access</p>
+          <p className="text-white/60 text-sm leading-relaxed">
+            Voice practice for <span className="text-white font-medium">{meta.label}</span> needs your microphone.
+            Your audio is only used during the conversation.
+          </p>
+        </div>
+
+        {error && (
+          <div className="w-full rounded-xl px-4 py-3 text-sm text-red-300 text-center"
+            style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)" }}>
+            {error}
+          </div>
+        )}
+
+        <button
+          onClick={onAllow}
+          disabled={requesting}
+          className="w-full py-4 rounded-2xl text-white font-bold text-base transition-all active:scale-95 disabled:opacity-60"
+          style={{ background: requesting ? "#334155" : "linear-gradient(135deg,#22c55e,#16a34a)" }}>
+          {requesting ? "Requesting…" : "Allow Microphone"}
+        </button>
+
+        <button
+          onClick={onCancel}
+          className="text-white/40 text-sm hover:text-white/70 transition-colors">
+          Cancel
+        </button>
       </div>
     </div>
   );
@@ -219,6 +280,11 @@ export default function Chat() {
   const [isTyping, setIsTyping] = useState(false);
   const [started, setStarted] = useState(false);
   const [callMode, setCallModeState] = useState(false);
+
+  // Mic permission gate
+  const [showMicPerm, setShowMicPerm]     = useState(false);
+  const [micPermError, setMicPermError]   = useState<string | null>(null);
+  const [micRequesting, setMicRequesting] = useState(false);
 
   // Ref so handleSend (useCallback) can check call mode without stale closure
   const callModeRef = useRef(false);
@@ -252,7 +318,6 @@ export default function Chat() {
 
   const starterRef = useRef(pickStarter(meta.starters));
 
-  // handleSend is stable — reads mutable refs for callMode & isMuted
   const handleSend = useCallback(
     (text: string) => {
       const trimmed = text.trim();
@@ -318,10 +383,9 @@ export default function Chat() {
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
 
   // Auto-restart listening ONLY after AI fully finishes speaking (call mode loop)
+  // This is the turn-based loop: AI speaks → wait 1.5s → listen for user
   useEffect(() => {
     if (!isSpeaking && callMode && !isListening && !isTyping && callModeRef.current) {
-      // Wait 1.5s after AI stops speaking before listening again
-      // This prevents mic picking up AI audio or cutting AI mid-sentence
       const t = setTimeout(() => {
         if (callModeRef.current && !isListening && !isSpeaking) {
           startListening();
@@ -332,7 +396,7 @@ export default function Chat() {
     return undefined;
   }, [isSpeaking, callMode, isListening, isTyping, startListening]);
 
-  // Greeting on mount
+  // Greeting on mount — show message only, never auto-speak in call mode
   useEffect(() => {
     if (!started) {
       setStarted(true);
@@ -340,16 +404,13 @@ export default function Chat() {
 
       setTimeout(() => {
         if (startInVoiceMode && isSupported) {
-          // activateCallMode ONLY sets the flag — does NOT stop audio or start listening.
-          // speak() will run the greeting; when it finishes, onSpeakDone() sees
-          // callMode=true and automatically starts listening. Perfect loop.
-          callModeRef.current = true;
-          setCallModeState(true);
-          speak(starterRef.current); // play greeting → auto-listen when done
+          // Show mic permission prompt — don't enter call mode yet
+          setShowMicPerm(true);
         } else {
+          // Text mode: speak greeting as normal if not muted
           if (!isMuted) speak(starterRef.current);
         }
-      }, 800);
+      }, 600);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -366,6 +427,26 @@ export default function Chat() {
     return () => clearInterval(interval);
   }, [uid]);
 
+  // ── Mic permission request ────────────────────────────────────────────────────
+  async function requestMicAndEnterCall() {
+    setMicPermError(null);
+    setMicRequesting(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Permission granted — release this test stream, startListening will get its own
+      stream.getTracks().forEach(t => t.stop());
+      setShowMicPerm(false);
+      setMicRequesting(false);
+      // Enter call mode — AI does NOT speak first; just start listening
+      callModeRef.current = true;
+      setCallModeState(true);
+      startListening();
+    } catch {
+      setMicRequesting(false);
+      setMicPermError("Microphone access was denied. Please allow mic access in your browser settings and try again.");
+    }
+  }
+
   function handleMicClick() {
     if (isListening) {
       stopListening();
@@ -376,10 +457,9 @@ export default function Chat() {
   }
 
   function enterCallMode() {
-    callModeRef.current = true;
-    setCallModeState(true);
-    stopSpeaking();
-    startListening();
+    // Show mic permission screen first — don't auto-speak anything
+    setShowMicPerm(true);
+    setMicPermError(null);
   }
 
   function exitCallMode() {
@@ -399,6 +479,17 @@ export default function Chat() {
 
   return (
     <>
+      {/* Mic permission overlay */}
+      {showMicPerm && (
+        <MicPermOverlay
+          meta={meta}
+          onAllow={requestMicAndEnterCall}
+          onCancel={() => { setShowMicPerm(false); setMicPermError(null); }}
+          error={micPermError}
+          requesting={micRequesting}
+        />
+      )}
+
       {callMode && (
         <CallModeOverlay
           phase={getCallPhase()}
@@ -448,7 +539,6 @@ export default function Chat() {
             )}
           </div>
         </div>
-
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
