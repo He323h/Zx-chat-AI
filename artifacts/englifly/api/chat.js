@@ -39,8 +39,8 @@ export default async function handler(req, res) {
   if (keys.length === 0) return res.status(500).json({ error: "No API keys" });
 
   const models = [
+    "meta-llama/llama-3.3-70b-instruct:free",
     "openrouter/owl-alpha",
-    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     "google/gemma-3-4b-it:free",
   ];
 
