@@ -77,7 +77,7 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
   }, []);
 
   const webSpeechFallback = useCallback(async (text: string) => {
-    if (!window.speechSynthesis) return;
+    if (!window.speechSynthesis) { setIsSpeaking(false); return; }
     window.speechSynthesis.cancel();
     const utterance  = new SpeechSynthesisUtterance(text);
     utterance.rate   = getSavedRate();
@@ -100,7 +100,9 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
       audioRef.current = null;
     }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
-    setIsSpeaking(false);
+
+    // Mark speaking IMMEDIATELY so call-mode loop doesn't trigger during fetch
+    setIsSpeaking(true);
 
     try {
       const response = await fetch("/api/tts", {
@@ -118,14 +120,12 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
       audioRef.current = audio;
 
       audio.src = url;
-      audio.onplay  = () => setIsSpeaking(true);
       audio.onended = () => {
         setIsSpeaking(false);
         URL.revokeObjectURL(url);
         if (audioRef.current === audio) audioRef.current = null;
       };
       audio.onerror = () => {
-        console.error("[TTS] Audio playback error");
         setIsSpeaking(false);
         URL.revokeObjectURL(url);
         if (audioRef.current === audio) audioRef.current = null;
@@ -135,13 +135,16 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
       await audio.play();
     } catch (err) {
       console.error("[TTS] fetch/play failed:", err);
+      // webSpeechFallback will manage isSpeaking itself (onstart/onend)
+      // so we first reset to false so it can set true again via onstart
+      setIsSpeaking(false);
       webSpeechFallback(text);
     }
   }, [webSpeechFallback]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try { recognitionRef.current.stop(); } catch {}
       recognitionRef.current = null;
     }
     setIsListening(false);
@@ -150,23 +153,28 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
   const startListening = useCallback(() => {
     if (!SpeechRecognitionClass) return;
 
+    // Stop any currently playing audio — mic and speaker together causes echo
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ""; audioRef.current = null; }
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     setIsSpeaking(false);
 
-    finalTranscriptRef.current = "";
-    setTranscript("");
-
+    // Abort any existing recognition before creating a new one
     if (recognitionRef.current) {
       try { recognitionRef.current.abort(); } catch {}
       recognitionRef.current = null;
     }
 
+    finalTranscriptRef.current = "";
+    setTranscript("");
+
     const recognition          = new SpeechRecognitionClass();
     recognitionRef.current     = recognition;
+    // continuous=false: recognition stops naturally after a pause (no restart ding)
     recognition.continuous     = false;
     recognition.interimResults = true;
     recognition.lang           = "en-IN";
+    // Suppress the browser's built-in "listening" sound on Chrome by maxAlternatives
+    recognition.maxAlternatives = 1;
 
     recognition.onstart = () => setIsListening(true);
 
@@ -185,6 +193,7 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
     recognition.onerror = (event: any) => {
       if (event.error === "no-speech" || event.error === "aborted") return;
       setIsListening(false);
+      recognitionRef.current = null;
     };
 
     recognition.onend = () => {

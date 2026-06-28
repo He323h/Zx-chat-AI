@@ -426,11 +426,6 @@ export default function Chat() {
                 <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-full text-white"
                   style={{ background: "hsl(var(--primary))" }}>{profile.englishLevel}</span>
               )}
-              {remainingMin !== null && (
-                <span className={`text-[11px] font-medium ${(remainingMin ?? 0) < 10 ? "text-destructive" : "text-muted-foreground"}`}>
-                  {remainingMin} min left
-                </span>
-              )}
             </div>
           </div>
           <div className="flex items-center gap-0.5">
