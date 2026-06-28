@@ -31,55 +31,61 @@ export default async function handler(req, res) {
   const { message, category, history } = req.body ?? {};
   if (!message) return res.status(400).json({ error: "message is required" });
 
-  const key = process.env.GEMINI_API_KEY 
-           || process.env.VITE_GEMINI_API_KEY_1
-           || process.env.VITE_GEMINI_API_KEY_2;
+  const keys = [
+    process.env.OPENROUTER_API_KEY_1,
+    process.env.OPENROUTER_API_KEY_2,
+  ].filter(Boolean);
 
-  if (!key) return res.status(500).json({ error: "Gemini API key not found" });
+  if (keys.length === 0) return res.status(500).json({ error: "No API keys" });
+
+  const models = [
+    "openrouter/owl-alpha",
+    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    "google/gemma-3-4b-it:free",
+  ];
 
   const systemPrompt = SYSTEM_PROMPTS[category] ?? SYSTEM_PROMPTS.casual;
   const maxTokens = category === "vocabulary" ? 500 : category === "actor" ? 700 : 150;
 
-  const contents = [
+  const messages = [
+    { role: "system", content: systemPrompt },
     ...(Array.isArray(history) ? history : []).map((m) => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }],
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: m.content,
     })),
-    { role: "user", parts: [{ text: message }] },
+    { role: "user", content: message },
   ];
 
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: systemPrompt }]
-          },
-          contents,
-          generationConfig: {
-            maxOutputTokens: maxTokens,
-            temperature: 0.7,
-          },
-        }),
+  for (const key of keys) {
+    for (const model of models) {
+      try {
+        const response = await fetch(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${key}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": "https://zx-chat-ai.vercel.app",
+            },
+            body: JSON.stringify({ model, messages, max_tokens: maxTokens }),
+          }
+        );
+
+        const data = await response.json();
+        if (!response.ok || data.error) throw new Error(data.error?.message ?? `HTTP ${response.status}`);
+
+        const reply = data.choices?.[0]?.message?.content ?? "";
+        if (!reply) throw new Error("Empty response");
+
+        console.log("Success:", model);
+        return res.json({ message: reply });
+      } catch (e) {
+        console.log(`Failed ${model}:`, e.message);
+        continue;
       }
-    );
-
-    const data = await response.json();
-    console.log("Gemini status:", response.status);
-    
-    if (!response.ok || data.error) {
-      throw new Error(data.error?.message ?? `HTTP ${response.status}`);
     }
-
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-    if (!reply) throw new Error("Empty response");
-
-    return res.json({ message: reply });
-  } catch (e) {
-    console.log("Gemini error:", e.message);
-    return res.status(500).json({ error: e.message });
   }
+
+  return res.status(500).json({ error: "All models failed" });
 }
