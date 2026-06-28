@@ -53,50 +53,6 @@ const MAX_TOKENS = {
   actor: 700,
 };
 
-const GEMINI_KEYS = [
-  process.env["GEMINI_API_KEY_1"] ?? "",
-  process.env["GEMINI_API_KEY_2"] ?? "",
-].filter(Boolean);
-
-const GEMINI_MODEL = "gemini-2.5-flash";
-const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-
-async function callGemini(apiKey, systemPrompt, history, message, maxTokens) {
-  const contents = [
-    ...(Array.isArray(history) ? history : []).map((m) => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }],
-    })),
-    { role: "user", parts: [{ text: message }] },
-  ];
-
-  const res = await fetch(
-    `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents,
-        generationConfig: {
-          maxOutputTokens: maxTokens,
-          temperature: 0.7,
-        },
-      }),
-    }
-  );
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw Object.assign(new Error(errText), { status: res.status });
-  }
-
-  const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-  if (!text) throw new Error("Empty response from Gemini");
-  return text.trim();
-}
-
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -105,27 +61,67 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  if (GEMINI_KEYS.length === 0) {
-    return res.status(500).json({
-      error: "Gemini API keys not configured. Add GEMINI_API_KEY_1 and GEMINI_API_KEY_2 to Vercel environment variables.",
-    });
-  }
-
   const { message, category, history } = req.body ?? {};
   if (!message) return res.status(400).json({ error: "message is required" });
+
+  const keys = [
+    process.env["OPENROUTER_API_KEY_1"],
+    process.env["OPENROUTER_API_KEY_2"],
+    process.env["VITE_OPENROUTER_API_KEY_1"],
+    process.env["VITE_OPENROUTER_API_KEY_2"],
+  ].filter(Boolean);
+
+  console.log("Keys found:", keys.length, "| Message:", message?.slice(0, 60));
+
+  if (keys.length === 0) {
+    return res.status(500).json({
+      error: "OpenRouter API keys not configured. Add OPENROUTER_API_KEY_1 to Vercel environment variables.",
+    });
+  }
 
   const systemPrompt = SYSTEM_PROMPTS[category] ?? SYSTEM_PROMPTS.casual;
   const maxTokens = MAX_TOKENS[category] ?? 200;
 
-  let lastError = null;
-  for (const key of GEMINI_KEYS) {
+  const messages = [
+    { role: "system", content: systemPrompt },
+    ...(Array.isArray(history) ? history : []).map((m) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: m.content,
+    })),
+    { role: "user", content: message },
+  ];
+
+  for (const key of keys) {
     try {
-      const reply = await callGemini(key, systemPrompt, history, message, maxTokens);
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://zx-chat-ai.vercel.app",
+        },
+        body: JSON.stringify({
+          model: "mistralai/mistral-7b-instruct:free",
+          messages,
+          max_tokens: maxTokens,
+        }),
+      });
+
+      const data = await response.json();
+      console.log("OpenRouter status:", response.status, "| error:", data.error?.message ?? "none");
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error?.message ?? `HTTP ${response.status}`);
+      }
+
+      const reply = data.choices?.[0]?.message?.content ?? "";
+      if (!reply) throw new Error("Empty response from OpenRouter");
+
       return res.json({ message: reply });
-    } catch (err) {
-      lastError = err;
+    } catch (e) {
+      console.log("Key failed:", e.message);
     }
   }
 
-  return res.status(502).json({ error: lastError?.message ?? "All Gemini keys exhausted." });
+  return res.status(500).json({ error: "All keys failed" });
 }
