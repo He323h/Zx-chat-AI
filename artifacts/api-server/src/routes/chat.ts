@@ -18,6 +18,8 @@ router.post("/chat", async (req, res) => {
     process.env["VITE_OPENROUTER_API_KEY_2"],
   ].filter(Boolean) as string[];
 
+  console.log(`[chat] keys found: ${keys.length}, message length: ${message.length}`);
+
   for (const key of keys) {
     try {
       const response = await fetch(
