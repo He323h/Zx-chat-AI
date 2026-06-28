@@ -230,12 +230,12 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
             silenceTimerRef.current = null;
           }
         } else if (hasSpeechRef.current && !silenceTimerRef.current) {
-          // Silence after speech → auto-stop after 1.5s
+          // Silence after speech → auto-stop after 3s (give user time to pause mid-sentence)
           silenceTimerRef.current = setTimeout(() => {
             if (mediaRecorderRef.current?.state === "recording") {
               mediaRecorderRef.current.stop();
             }
-          }, 1500);
+          }, 3000);
         }
       }, 100);
 

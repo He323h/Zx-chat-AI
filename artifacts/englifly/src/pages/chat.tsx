@@ -317,14 +317,16 @@ export default function Chat() {
   // Keep refs in sync with state
   useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
 
-  // Auto-restart listening after AI finishes speaking (call mode loop)
+  // Auto-restart listening ONLY after AI fully finishes speaking (call mode loop)
   useEffect(() => {
     if (!isSpeaking && callMode && !isListening && !isTyping && callModeRef.current) {
+      // Wait 1.5s after AI stops speaking before listening again
+      // This prevents mic picking up AI audio or cutting AI mid-sentence
       const t = setTimeout(() => {
-        if (callModeRef.current && !isListening) {
+        if (callModeRef.current && !isListening && !isSpeaking) {
           startListening();
         }
-      }, 600);
+      }, 1500);
       return () => clearTimeout(t);
     }
     return undefined;

@@ -42,7 +42,7 @@ export interface StrangerMessage {
   isSystem?: boolean;
 }
 
-const SESSION_DURATION_SECONDS = 180;
+const SESSION_DURATION_SECONDS = 600;
 
 export async function joinQueue(db: Firestore, uid: string): Promise<string | null> {
   const queueRef = collection(db, 'strangerQueue');

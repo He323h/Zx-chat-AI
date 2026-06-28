@@ -14,7 +14,7 @@ import { Timestamp } from "firebase/firestore";
 
 type Phase = "idle" | "searching" | "matched" | "ended";
 
-const SESSION_SECONDS = 180;
+const SESSION_SECONDS = 600;
 
 function formatCountdown(secs: number): string {
   const m = Math.floor(secs / 60).toString().padStart(2, "0");
@@ -299,7 +299,7 @@ export default function StrangerChat() {
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-foreground text-sm leading-tight">Chat with a Stranger</p>
             <p className="text-xs text-muted-foreground">
-              {phase === "matched" ? "Anonymous partner • 3 min session" :
+              {phase === "matched" ? "Anonymous partner • 10 min session" :
                phase === "searching" ? "Looking for a partner…" :
                phase === "ended" ? "Session ended" :
                "Anonymous English practice"}
@@ -337,12 +337,12 @@ export default function StrangerChat() {
               <div>
                 <h2 className="font-bold text-xl text-foreground mb-2">Chat with a Stranger</h2>
                 <p className="text-muted-foreground text-sm max-w-xs">
-                  Get matched with a random English learner for a <strong>3-minute</strong> anonymous conversation. Practice real conversations!
+                  Get matched with a random English learner for a <strong>10-minute</strong> anonymous conversation. Practice real conversations!
                 </p>
               </div>
               <div className="bg-white rounded-2xl border border-border p-4 w-full text-left space-y-2 text-sm text-muted-foreground">
                 <p>✅ Completely anonymous — no names shared</p>
-                <p>⏱️ Session automatically ends in 3 minutes</p>
+                <p>⏱️ Session automatically ends in 10 minutes</p>
                 <p>🚩 Report inappropriate behavior anytime</p>
                 <p>🔒 Chat history deleted when session ends</p>
               </div>
@@ -488,7 +488,7 @@ export default function StrangerChat() {
                 </h2>
                 <p className="text-muted-foreground text-sm max-w-xs">
                   {countdown === 0
-                    ? "Great practice! Your 3-minute session is complete. Chat history has been deleted."
+                    ? "Great practice! Your 10-minute session is complete. Chat history has been deleted."
                     : "The chat session has ended. Chat history has been deleted."}
                 </p>
               </div>
