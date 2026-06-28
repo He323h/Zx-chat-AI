@@ -3,6 +3,7 @@ import { Router, type IRouter } from "express";
 const router: IRouter = Router();
 
 const SYSTEM_PROMPTS: Record<string, string> = {
+  teacher: "You are a helpful AI teacher.",
   travel: "You are a friendly English conversation partner named ZX helping someone practice Travel English. Have natural conversations about travel, airports, hotels, and directions. Gently correct grammar with 'By the way, a more natural way to say that is...' Keep replies to 2-3 sentences max.",
   interview: "You are a friendly English interview coach named ZX. Conduct realistic mock job interviews. Ask one question at a time. Give brief feedback after each answer. Keep replies to 2-3 sentences max.",
   school: "You are a friendly English conversation partner named ZX for daily speaking practice. Talk about everyday topics. Gently correct grammar with 'By the way, a more natural way to say that is...' Keep replies to 2-3 sentences max.",
@@ -12,10 +13,11 @@ const SYSTEM_PROMPTS: Record<string, string> = {
 };
 
 router.post("/chat", async (req, res) => {
-  const { message, category, history } = req.body as {
+  const { message, category, history, systemPrompt: customPrompt } = req.body as {
     message: string;
     category?: string;
     history?: { role: string; content: string }[];
+    systemPrompt?: string;
   };
 
   if (!message) {
@@ -23,7 +25,7 @@ router.post("/chat", async (req, res) => {
     return;
   }
 
-  const systemPrompt = SYSTEM_PROMPTS[category ?? "casual"] ?? SYSTEM_PROMPTS.casual;
+  const systemPrompt = customPrompt || (SYSTEM_PROMPTS[category ?? "casual"] ?? SYSTEM_PROMPTS.casual);
 
   const messages = [
     { role: "system", content: systemPrompt },

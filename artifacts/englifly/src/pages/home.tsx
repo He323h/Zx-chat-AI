@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGetUserProfile, useGetTodayUsage, getGetUserProfileQueryKey, getGetTodayUsageQueryKey } from "@/lib/api";
-import { Settings, Crown, Users, Mic, ChevronRight, X } from "lucide-react";
+import { Settings, Crown, Users, Mic, ChevronRight, X, GraduationCap } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getStats, getAccuracy, type DailyStats } from "@/lib/dailyStats";
 
@@ -184,6 +184,19 @@ export default function Home() {
               <div>
                 <p className="font-bold text-[13px] text-slate-800 leading-tight">Chat Stranger</p>
                 <p className="text-[11px] text-slate-400 mt-0.5">Random partner se baat</p>
+              </div>
+            </button>
+
+            <button onClick={() => setLocation("/teacher")}
+              className="flex flex-col items-start gap-2 p-4 rounded-2xl active:scale-[0.97] transition-all duration-150 shadow-sm text-left"
+              style={{ background: "white" }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm"
+                style={{ background: "linear-gradient(135deg,#0d9488,#0891b2)" }}>
+                <GraduationCap size={20} className="text-white" />
+              </div>
+              <div>
+                <p className="font-bold text-[13px] text-slate-800 leading-tight">AI Teacher</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Personal study plan + homework</p>
               </div>
             </button>
 

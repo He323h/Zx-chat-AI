@@ -31,6 +31,10 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const onTranscriptReadyRef = useRef(onTranscriptReady);
   const listeningRef = useRef(false);
+  // Accumulated final text across continuous segments
+  const accumulatedRef = useRef("");
+  // Timer to auto-submit after speech pause
+  const pauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { onTranscriptReadyRef.current = onTranscriptReady; }, [onTranscriptReady]);
 
@@ -76,7 +80,7 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
       .join(" ")
       .replace(/[*_`#]/g, "")
       .trim()
-      .slice(0, 500); // keep TTS short for speed
+      .slice(0, 500);
 
     if (!cleaned) { onDone?.(); return; }
 
@@ -105,18 +109,37 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
     window.speechSynthesis.speak(utterance);
   }, []);
 
+  // ── Internal: submit accumulated text ────────────────────────────────────────
+  const submitAccumulated = useCallback(() => {
+    if (pauseTimerRef.current) {
+      clearTimeout(pauseTimerRef.current);
+      pauseTimerRef.current = null;
+    }
+    const text = accumulatedRef.current.trim();
+    accumulatedRef.current = "";
+    setTranscript("");
+    setIsListening(false);
+    listeningRef.current = false;
+    if (text) onTranscriptReadyRef.current?.(text);
+  }, []);
+
   // ── Stop listening ───────────────────────────────────────────────────────────
   const stopListening = useCallback(() => {
+    if (pauseTimerRef.current) {
+      clearTimeout(pauseTimerRef.current);
+      pauseTimerRef.current = null;
+    }
     listeningRef.current = false;
+    accumulatedRef.current = "";
     if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch {}
+      try { recognitionRef.current.abort(); } catch {}
       recognitionRef.current = null;
     }
     setIsListening(false);
     setTranscript("");
   }, []);
 
-  // ── Start listening via SpeechRecognition (browser built-in, instant) ────────
+  // ── Start listening — uses continuous=true so mic opens ONCE (no repeated OS sound) ──
   const startListening = useCallback(() => {
     if (!SpeechRec || listeningRef.current) return;
 
@@ -127,9 +150,12 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
       recognitionRef.current = null;
     }
 
+    accumulatedRef.current = "";
+
     const rec = new SpeechRec();
     rec.lang = "en-IN";
-    rec.continuous = false;
+    // continuous=true: mic stays open without OS "click" sound between messages
+    rec.continuous = true;
     rec.interimResults = true;
     rec.maxAlternatives = 1;
 
@@ -143,42 +169,72 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
 
     rec.onresult = (event) => {
       let interim = "";
-      let final = "";
+      let finalSegment = "";
+
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) final += t;
-        else interim += t;
+        if (event.results[i].isFinal) {
+          finalSegment += t;
+        } else {
+          interim += t;
+        }
       }
-      if (interim) setTranscript(`🎙️ ${interim}`);
-      if (final.trim()) {
-        setTranscript("");
-        setIsListening(false);
-        listeningRef.current = false;
-        recognitionRef.current = null;
-        onTranscriptReadyRef.current?.(final.trim());
+
+      if (finalSegment) {
+        accumulatedRef.current += (accumulatedRef.current ? " " : "") + finalSegment.trim();
+      }
+
+      const display = accumulatedRef.current || interim;
+      if (display) setTranscript(`🎙️ ${display}`);
+
+      // After a final segment, wait 1.2s of silence then auto-submit
+      if (finalSegment && accumulatedRef.current) {
+        if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
+        pauseTimerRef.current = setTimeout(() => {
+          submitAccumulated();
+          // Keep recognition alive for next utterance (mic stays open)
+        }, 1200);
       }
     };
 
     rec.onspeechend = () => {
-      try { rec.stop(); } catch {}
+      // Speech detected then stopped — trigger submit after short delay
+      if (accumulatedRef.current) {
+        if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
+        pauseTimerRef.current = setTimeout(submitAccumulated, 800);
+      }
     };
 
     rec.onerror = (event) => {
-      if (event.error === "aborted" || event.error === "no-speech") {
-        setTranscript("");
+      if (event.error === "aborted") return;
+      if (event.error === "no-speech") {
+        // No speech — keep listening
+        setTranscript("🎙️ Bol raha hoon...");
+        return;
       }
       setIsListening(false);
       listeningRef.current = false;
       recognitionRef.current = null;
+      setTranscript("");
+      accumulatedRef.current = "";
     };
 
     rec.onend = () => {
-      if (listeningRef.current) {
-        // Still expecting to listen — was cut short, clean up
-        setIsListening(false);
-        listeningRef.current = false;
-        recognitionRef.current = null;
-        setTranscript("");
+      // Recognition ended unexpectedly while we're still in listening mode — restart silently
+      if (listeningRef.current && recognitionRef.current === rec) {
+        // Submit anything accumulated first
+        if (accumulatedRef.current) {
+          submitAccumulated();
+          return;
+        }
+        // Restart to keep mic open without a new OS sound
+        try {
+          rec.start();
+        } catch {
+          setIsListening(false);
+          listeningRef.current = false;
+          recognitionRef.current = null;
+        }
       }
     };
 
@@ -189,11 +245,12 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
       listeningRef.current = false;
       recognitionRef.current = null;
     }
-  }, [SpeechRec, stopSpeaking]);
+  }, [SpeechRec, stopSpeaking, submitAccumulated]);
 
   // ── Cleanup on unmount ───────────────────────────────────────────────────────
   useEffect(() => {
     return () => {
+      if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
       listeningRef.current = false;
       if (recognitionRef.current) {
         try { recognitionRef.current.abort(); } catch {}

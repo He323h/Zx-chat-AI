@@ -18,6 +18,7 @@ import Terms from "@/pages/terms";
 import About from "@/pages/about";
 import VocabularyPage from "@/pages/vocabulary";
 import ActorPage from "@/pages/actor";
+import TeacherPage from "@/pages/teacher";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -73,6 +74,7 @@ function Router() {
         <Route path="/stranger" component={StrangerChat} />
         <Route path="/vocabulary" component={VocabularyPage} />
         <Route path="/actor" component={ActorPage} />
+        <Route path="/teacher" component={TeacherPage} />
         <Route path="/subscription" component={Subscription} />
         <Route path="/settings" component={Settings} />
         <Route path="/privacy-policy" component={PrivacyPolicy} />
