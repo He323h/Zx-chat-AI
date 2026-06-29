@@ -19,6 +19,11 @@ import About from "@/pages/about";
 import VocabularyPage from "@/pages/vocabulary";
 import ActorPage from "@/pages/actor";
 import TeacherPage from "@/pages/teacher";
+import StreakPage from "@/pages/streak";
+import QuizPage from "@/pages/quiz";
+import RoadmapPage from "@/pages/roadmap";
+import GrammarPage from "@/pages/grammar";
+import { updateStreak } from "@/lib/streakSystem";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -27,6 +32,13 @@ const queryClient = new QueryClient({
 function AuthGate() {
   const { user, loading } = useAuth();
   const [location, setLocation] = useLocation();
+
+  // Update streak whenever user is authenticated
+  useEffect(() => {
+    if (user) {
+      updateStreak();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (loading) return;
@@ -80,6 +92,11 @@ function Router() {
         <Route path="/privacy-policy" component={PrivacyPolicy} />
         <Route path="/terms" component={Terms} />
         <Route path="/about" component={About} />
+        {/* New feature routes */}
+        <Route path="/streak" component={StreakPage} />
+        <Route path="/quiz" component={QuizPage} />
+        <Route path="/roadmap" component={RoadmapPage} />
+        <Route path="/grammar" component={GrammarPage} />
         <Route path="/" component={RootRedirect} />
         <Route component={NotFound} />
       </Switch>

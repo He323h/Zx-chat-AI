@@ -4,6 +4,9 @@ import { useGetUserProfile, useGetTodayUsage, getGetUserProfileQueryKey, getGetT
 import { Settings, Crown, Users, Mic, ChevronRight, X, GraduationCap } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getStats, getAccuracy, type DailyStats } from "@/lib/dailyStats";
+import { getStreak } from "@/lib/streakSystem";
+import { getQuizState } from "@/lib/quizData";
+import { getTopicsWithStatus } from "@/lib/roadmapData";
 
 export default function Home() {
   const { user } = useAuth();
@@ -34,9 +37,15 @@ export default function Home() {
 
   const accuracy = getAccuracy();
   const firstName = (user?.email ?? "").split("@")[0];
-  const streak = profile?.streak ?? 0;
+  const streak = profile?.streak ?? getStreak().currentStreak;
   const subscription = profile?.subscription ?? "trial";
   const remainingMin = usage?.remainingMinutes === 9999 ? null : usage?.remainingMinutes;
+
+  // Quick stats for new features
+  const quizState = getQuizState();
+  const roadmapTopics = getTopicsWithStatus();
+  const completedTopics = roadmapTopics.filter(t => t.status === "completed").length;
+  const currentTopic = roadmapTopics.find(t => t.status === "current");
 
   function goToChat() {
     const hasLevel = localStorage.getItem("ef_level") || profile?.englishLevel;
@@ -147,8 +156,72 @@ export default function Home() {
           </button>
         </div>
 
-        {/* ── Feature Grid ── */}
-        <div className="fade-up" style={{ animationDelay: "0.06s" }}>
+        {/* ── New Features Row ── */}
+        <div className="fade-up" style={{ animationDelay: "0.05s" }}>
+          <p className="text-[13px] font-bold text-slate-500 uppercase tracking-wide mb-2.5">Your Progress</p>
+          <div className="grid grid-cols-2 gap-2.5">
+
+            {/* Streak Badge */}
+            <button onClick={() => setLocation("/streak")}
+              className="flex flex-col items-start gap-2 p-4 rounded-2xl active:scale-[0.97] transition-all duration-150 shadow-sm text-left"
+              style={{ background: "white" }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm"
+                style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>🔥</div>
+              <div>
+                <p className="font-bold text-[13px] text-slate-800 leading-tight">Streak Badges</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {getStreak().currentStreak > 0 ? `${getStreak().currentStreak}-day streak` : "Start today!"}
+                </p>
+              </div>
+            </button>
+
+            {/* Daily Quiz */}
+            <button onClick={() => setLocation("/quiz")}
+              className="flex flex-col items-start gap-2 p-4 rounded-2xl active:scale-[0.97] transition-all duration-150 shadow-sm text-left"
+              style={{ background: "white" }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm"
+                style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)" }}>❓</div>
+              <div>
+                <p className="font-bold text-[13px] text-slate-800 leading-tight">Daily Quiz</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {quizState.correctCount + quizState.wrongCount > 0
+                    ? `${quizState.correctCount}✅ ${quizState.wrongCount}❌ today`
+                    : "7 questions today"}
+                </p>
+              </div>
+            </button>
+
+            {/* Roadmap */}
+            <button onClick={() => setLocation("/roadmap")}
+              className="flex flex-col items-start gap-2 p-4 rounded-2xl active:scale-[0.97] transition-all duration-150 shadow-sm text-left"
+              style={{ background: "white" }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm"
+                style={{ background: "linear-gradient(135deg,#059669,#10b981)" }}>🗺️</div>
+              <div>
+                <p className="font-bold text-[13px] text-slate-800 leading-tight">Roadmap</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {completedTopics}/{roadmapTopics.length} topics done
+                </p>
+              </div>
+            </button>
+
+            {/* Grammar Check */}
+            <button onClick={() => setLocation("/grammar")}
+              className="flex flex-col items-start gap-2 p-4 rounded-2xl active:scale-[0.97] transition-all duration-150 shadow-sm text-left"
+              style={{ background: "white" }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm"
+                style={{ background: "linear-gradient(135deg,#0e7490,#0891b2)" }}>✏️</div>
+              <div>
+                <p className="font-bold text-[13px] text-slate-800 leading-tight">Grammar Check</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">AI grammar correction</p>
+              </div>
+            </button>
+
+          </div>
+        </div>
+
+        {/* ── More Features Grid ── */}
+        <div className="fade-up" style={{ animationDelay: "0.08s" }}>
           <p className="text-[13px] font-bold text-slate-500 uppercase tracking-wide mb-2.5">More Features</p>
           <div className="grid grid-cols-2 gap-2.5">
 
@@ -205,7 +278,7 @@ export default function Home() {
 
         {/* ── Ad Banner ── */}
         {!adDismissed && (
-          <div className="fade-up rounded-2xl overflow-hidden shadow-sm" style={{ animationDelay: "0.1s" }}>
+          <div className="fade-up rounded-2xl overflow-hidden shadow-sm" style={{ animationDelay: "0.12s" }}>
             <div className="relative" style={{ background: "linear-gradient(135deg,#1a1a2e,#16213e)", minHeight: 130 }}>
               <div className="absolute top-2.5 left-3 z-10">
                 <span className="text-[10px] font-semibold text-white/60 bg-white/10 px-2 py-0.5 rounded-full">
@@ -253,4 +326,3 @@ function StatPill({ icon, value, label }: { icon: string; value: string; label: 
     </div>
   );
 }
-
