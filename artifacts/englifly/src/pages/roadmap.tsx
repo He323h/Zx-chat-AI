@@ -121,17 +121,8 @@ export default function RoadmapPage() {
 
   function handleComplete(id: string) {
     const topic = topics.find(t => t.id === id);
-    if (!topic) return;
-
-    if (topic.status === "completed") {
-      setToast("Already completed! 🎉");
-    } else if (topic.status === "current") {
-      const updated = completeTopic(id);
-      setTopics(getTopicsWithStatus());
-      setToast(`"${topic.title}" marked complete! ✅`);
-    }
-
-    setTimeout(() => setToast(null), 2500);
+    if (!topic || topic.status === "locked") return;
+    setLocation(`/lesson/${id}`);
   }
 
   return (

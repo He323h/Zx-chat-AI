@@ -164,50 +164,30 @@ export default function StreakPage() {
         {/* Day Progress Track */}
         <div className="fade-up bg-white rounded-2xl shadow-sm p-5" style={{ animationDelay: "0.06s" }}>
           <p className="text-[12px] font-bold text-slate-400 uppercase tracking-wider mb-4">15-Day Progress</p>
-          <div className="flex items-center gap-0">
-            {days15.map((day, i) => {
+          <div className="grid grid-cols-5 gap-3">
+            {days15.map((day) => {
               const filled = day <= Math.min(streak.currentStreak, 15);
-              const isLast = i === days15.length - 1;
-
+              const isCurrent = day === streak.currentStreak && streak.currentStreak > 0;
               return (
-                <div key={day} className="flex items-center" style={{ flex: 1 }}>
-                  {/* Day circle */}
-                  <div className="flex flex-col items-center" style={{ minWidth: 0 }}>
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 shrink-0"
-                      style={{
-                        background: filled
-                          ? "linear-gradient(135deg,#22c55e,#16a34a)"
-                          : "rgba(0,0,0,0.05)",
-                        color: filled ? "#fff" : "#94a3b8",
-                        border: filled ? "none" : "1.5px solid #e2e8f0",
-                        transform: day === streak.currentStreak && streak.currentStreak > 0 ? "scale(1.15)" : "scale(1)",
-                        boxShadow: day === streak.currentStreak && streak.currentStreak > 0
-                          ? "0 0 0 3px rgba(34,197,94,0.3)" : "none",
-                      }}
-                    >
-                      {filled ? "✓" : day}
-                    </div>
+                <div key={day} className="flex flex-col items-center gap-1">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-bold transition-all duration-300"
+                    style={{
+                      background: filled
+                        ? "linear-gradient(135deg,#22c55e,#16a34a)"
+                        : "rgba(0,0,0,0.05)",
+                      color: filled ? "#fff" : "#94a3b8",
+                      border: filled ? "none" : "1.5px solid #e2e8f0",
+                      transform: isCurrent ? "scale(1.12)" : "scale(1)",
+                      boxShadow: isCurrent ? "0 0 0 3px rgba(34,197,94,0.3)" : "none",
+                    }}
+                  >
+                    {filled ? "✓" : day}
                   </div>
-                  {/* Connector line */}
-                  {!isLast && (
-                    <div
-                      className="h-[2px] flex-1"
-                      style={{
-                        background: filled && day < streak.currentStreak
-                          ? "#22c55e"
-                          : "#e2e8f0",
-                        minWidth: 2,
-                      }}
-                    />
-                  )}
+                  <span className="text-[9px] text-slate-400 font-medium">D{day}</span>
                 </div>
               );
             })}
-          </div>
-          <div className="flex justify-between mt-2 px-0.5">
-            <span className="text-[9px] text-slate-400">Day 1</span>
-            <span className="text-[9px] text-slate-400">Day 15</span>
           </div>
         </div>
 

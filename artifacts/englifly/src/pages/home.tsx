@@ -156,72 +156,8 @@ export default function Home() {
           </button>
         </div>
 
-        {/* ── New Features Row ── */}
-        <div className="fade-up" style={{ animationDelay: "0.05s" }}>
-          <p className="text-[13px] font-bold text-slate-500 uppercase tracking-wide mb-2.5">Your Progress</p>
-          <div className="grid grid-cols-2 gap-2.5">
-
-            {/* Streak Badge */}
-            <button onClick={() => setLocation("/streak")}
-              className="flex flex-col items-start gap-2 p-4 rounded-2xl active:scale-[0.97] transition-all duration-150 shadow-sm text-left"
-              style={{ background: "white" }}>
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm"
-                style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>🔥</div>
-              <div>
-                <p className="font-bold text-[13px] text-slate-800 leading-tight">Streak Badges</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  {getStreak().currentStreak > 0 ? `${getStreak().currentStreak}-day streak` : "Start today!"}
-                </p>
-              </div>
-            </button>
-
-            {/* Daily Quiz */}
-            <button onClick={() => setLocation("/quiz")}
-              className="flex flex-col items-start gap-2 p-4 rounded-2xl active:scale-[0.97] transition-all duration-150 shadow-sm text-left"
-              style={{ background: "white" }}>
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm"
-                style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)" }}>❓</div>
-              <div>
-                <p className="font-bold text-[13px] text-slate-800 leading-tight">Daily Quiz</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  {quizState.correctCount + quizState.wrongCount > 0
-                    ? `${quizState.correctCount}✅ ${quizState.wrongCount}❌ today`
-                    : "7 questions today"}
-                </p>
-              </div>
-            </button>
-
-            {/* Roadmap */}
-            <button onClick={() => setLocation("/roadmap")}
-              className="flex flex-col items-start gap-2 p-4 rounded-2xl active:scale-[0.97] transition-all duration-150 shadow-sm text-left"
-              style={{ background: "white" }}>
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm"
-                style={{ background: "linear-gradient(135deg,#059669,#10b981)" }}>🗺️</div>
-              <div>
-                <p className="font-bold text-[13px] text-slate-800 leading-tight">Roadmap</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  {completedTopics}/{roadmapTopics.length} topics done
-                </p>
-              </div>
-            </button>
-
-            {/* Grammar Check */}
-            <button onClick={() => setLocation("/grammar")}
-              className="flex flex-col items-start gap-2 p-4 rounded-2xl active:scale-[0.97] transition-all duration-150 shadow-sm text-left"
-              style={{ background: "white" }}>
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm"
-                style={{ background: "linear-gradient(135deg,#0e7490,#0891b2)" }}>✏️</div>
-              <div>
-                <p className="font-bold text-[13px] text-slate-800 leading-tight">Grammar Check</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">AI grammar correction</p>
-              </div>
-            </button>
-
-          </div>
-        </div>
-
         {/* ── More Features Grid ── */}
-        <div className="fade-up" style={{ animationDelay: "0.08s" }}>
+        <div className="fade-up" style={{ animationDelay: "0.05s" }}>
           <p className="text-[13px] font-bold text-slate-500 uppercase tracking-wide mb-2.5">More Features</p>
           <div className="grid grid-cols-2 gap-2.5">
 
@@ -270,6 +206,70 @@ export default function Home() {
               <div>
                 <p className="font-bold text-[13px] text-slate-800 leading-tight">AI Teacher</p>
                 <p className="text-[11px] text-slate-400 mt-0.5">Personal study plan + homework</p>
+              </div>
+            </button>
+
+          </div>
+        </div>
+
+        {/* ── Your Progress Row ── */}
+        <div className="fade-up" style={{ animationDelay: "0.08s" }}>
+          <p className="text-[13px] font-bold text-slate-500 uppercase tracking-wide mb-2.5">Your Progress</p>
+          <div className="grid grid-cols-2 gap-2.5">
+
+            {/* Streak Badge */}
+            <button onClick={() => setLocation("/streak")}
+              className="flex flex-col items-start gap-2 p-4 rounded-2xl active:scale-[0.97] transition-all duration-150 shadow-sm text-left"
+              style={{ background: "white" }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm"
+                style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>🔥</div>
+              <div>
+                <p className="font-bold text-[13px] text-slate-800 leading-tight">Streak Badges</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {getStreak().currentStreak > 0 ? `${getStreak().currentStreak}-day streak` : "Start today!"}
+                </p>
+              </div>
+            </button>
+
+            {/* Daily Quiz */}
+            <button onClick={() => setLocation("/quiz")}
+              className="flex flex-col items-start gap-2 p-4 rounded-2xl active:scale-[0.97] transition-all duration-150 shadow-sm text-left"
+              style={{ background: "white" }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm"
+                style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)" }}>❓</div>
+              <div>
+                <p className="font-bold text-[13px] text-slate-800 leading-tight">Daily Quiz</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {quizState.correctCount + quizState.wrongCount > 0
+                    ? `${quizState.correctCount}✅ ${quizState.wrongCount}❌ today`
+                    : "7 questions today"}
+                </p>
+              </div>
+            </button>
+
+            {/* Roadmap */}
+            <button onClick={() => setLocation("/roadmap")}
+              className="flex flex-col items-start gap-2 p-4 rounded-2xl active:scale-[0.97] transition-all duration-150 shadow-sm text-left"
+              style={{ background: "white" }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm"
+                style={{ background: "linear-gradient(135deg,#059669,#10b981)" }}>🗺️</div>
+              <div>
+                <p className="font-bold text-[13px] text-slate-800 leading-tight">Roadmap</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {completedTopics}/{roadmapTopics.length} topics done
+                </p>
+              </div>
+            </button>
+
+            {/* Word Arrange */}
+            <button onClick={() => setLocation("/grammar")}
+              className="flex flex-col items-start gap-2 p-4 rounded-2xl active:scale-[0.97] transition-all duration-150 shadow-sm text-left"
+              style={{ background: "white" }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm"
+                style={{ background: "linear-gradient(135deg,#0e7490,#0891b2)" }}>🧩</div>
+              <div>
+                <p className="font-bold text-[13px] text-slate-800 leading-tight">Word Arrange</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Duolingo-style exercise</p>
               </div>
             </button>
 

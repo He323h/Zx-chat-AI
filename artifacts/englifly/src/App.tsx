@@ -23,6 +23,7 @@ import StreakPage from "@/pages/streak";
 import QuizPage from "@/pages/quiz";
 import RoadmapPage from "@/pages/roadmap";
 import GrammarPage from "@/pages/grammar";
+import LessonPage from "@/pages/lesson";
 import { updateStreak } from "@/lib/streakSystem";
 
 const queryClient = new QueryClient({
@@ -97,6 +98,7 @@ function Router() {
         <Route path="/quiz" component={QuizPage} />
         <Route path="/roadmap" component={RoadmapPage} />
         <Route path="/grammar" component={GrammarPage} />
+        <Route path="/lesson/:topicId" component={LessonPage} />
         <Route path="/" component={RootRedirect} />
         <Route component={NotFound} />
       </Switch>
