@@ -11,6 +11,7 @@ import {
   showNotification,
 } from "@/lib/notifications";
 import { RATE_MAP, DEFAULT_RATE_KEY, pickBestVoice } from "@/hooks/useSpeech";
+import { BottomNav } from "@/components/BottomNav";
 
 const RATE_OPTIONS = [
   { key: "slow",   label: "Slow",   hint: "0.7×" },
@@ -49,7 +50,7 @@ export default function Settings() {
     setNotifPermission(Notification.permission);
     if (granted) {
       setNotifEnabled(true);
-      showNotification("✅ Notifications enabled!", "You'll get daily practice reminders from ZX-Chat AI.");
+      showNotification("✅ Notifications enabled!", "You'll get daily practice reminders from EngliFly.");
     }
   }
 
@@ -91,40 +92,44 @@ export default function Settings() {
     window.speechSynthesis.speak(utter);
   }
 
-  const firstName = (user?.email ?? "").split("@")[0];
+  const firstName = (user?.displayName ?? user?.email ?? "").split(/[@\s]/)[0] || "Learner";
 
   return (
-    <div className="min-h-screen" style={{ background: "#f2f5f9" }}>
+    <div className="clay-page pb-28">
 
-      {/* Header */}
-      <div className="px-4 pt-10 pb-4"
-        style={{ background: "linear-gradient(135deg,#0e5fa8,#1a8fd1)" }}>
-        <button onClick={() => setLocation("/home")}
-          className="w-8 h-8 rounded-full flex items-center justify-center mb-3"
-          style={{ background: "rgba(255,255,255,0.15)" }}>
-          <ArrowLeft size={17} className="text-white" />
-        </button>
-        <h1 className="text-white font-bold text-xl">Settings</h1>
-        <p className="text-white/60 text-xs mt-0.5">Manage your preferences</p>
+      {/* Clay Header */}
+      <div className="clay-header px-5 pt-10 pb-6">
+        <div className="flex items-center gap-3 mb-3">
+          <button onClick={() => setLocation("/home")}
+            aria-label="Back to Home"
+            className="w-10 h-10 rounded-[16px] flex items-center justify-center"
+            style={{ background: "rgba(255,255,255,0.22)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.35)" }}>
+            <ArrowLeft size={18} className="text-white" />
+          </button>
+          <div>
+            <p className="text-white font-black text-[18px] leading-tight">Settings</p>
+            <p className="text-white/65 text-[11px]">Manage your preferences</p>
+          </div>
+        </div>
       </div>
 
       {/* Profile Card */}
-      <div className="mx-4 -mt-1 fade-up">
-        <div className="bg-white rounded-2xl shadow-md p-4 flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-xl shrink-0"
-            style={{ background: "linear-gradient(135deg,#0e5fa8,#1a8fd1)" }}>
+      <div className="mx-4 -mt-4 fade-up">
+        <div className="clay-card p-4 flex items-center gap-4">
+          <div className="w-14 h-14 rounded-[18px] flex items-center justify-center text-white font-black text-xl shrink-0"
+            style={{ background: "linear-gradient(135deg,#1CB0F6,#0E8FD4)", boxShadow: "-2px -2px 5px rgba(255,255,255,0.7), 3px 3px 8px rgba(28,176,246,0.35)" }}>
             {firstName[0]?.toUpperCase() ?? "U"}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-slate-800 text-base capitalize truncate">{firstName}</p>
-            <p className="text-slate-400 text-xs truncate">{user?.email}</p>
+            <p className="font-black text-[#1A2B3C] text-base capitalize truncate">{firstName}</p>
+            <p className="text-[#6B7785] text-xs truncate">{user?.email}</p>
             <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full text-white"
-                style={{ background: "linear-gradient(135deg,#0e5fa8,#1a8fd1)" }}>
+              <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full text-white"
+                style={{ background: "linear-gradient(135deg,#1CB0F6,#0E8FD4)" }}>
                 {profile?.subscription ?? "trial"} plan
               </span>
               {(profile?.streak ?? 0) > 0 && (
-                <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
                   🔥 {profile?.streak}-day streak
                 </span>
               )}
@@ -133,8 +138,9 @@ export default function Settings() {
           {(profile?.subscription ?? "trial") !== "pro" && (
             <button
               onClick={() => setLocation("/subscription")}
-              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
+              aria-label="Upgrade to Pro"
+              className="w-11 h-11 rounded-[16px] flex items-center justify-center shrink-0"
+              style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "-2px -2px 5px rgba(255,255,255,0.6), 3px 3px 10px rgba(217,119,6,0.4)" }}>
               <Crown size={18} className="text-white" />
             </button>
           )}
@@ -145,19 +151,23 @@ export default function Settings() {
 
         {/* Notifications */}
         {notifSupported && (
-          <Card>
-            <CardHeader icon={<Bell size={15} className="text-white" />} iconBg="linear-gradient(135deg,#8b5cf6,#7c3aed)" title="Notifications" />
+          <ClayCard>
+            <ClayCardHeader icon={<Bell size={15} className="text-white" />} iconBg="linear-gradient(135deg,#8b5cf6,#7c3aed)" title="Notifications" />
             <div className="px-4 pb-4 space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: "#f5f8fc" }}>
+              <div className="flex items-center justify-between p-3 rounded-[16px]"
+                style={{ background: "#EAF4FF", boxShadow: "inset 1px 1px 4px rgba(28,176,246,0.12), inset -1px -1px 3px rgba(255,255,255,0.9)" }}>
                 <div className="flex-1 min-w-0 mr-3">
-                  <p className="font-semibold text-slate-800 text-sm">Daily Practice Reminder</p>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="font-bold text-[#1A2B3C] text-sm">Daily Practice Reminder</p>
+                  <p className="text-xs text-[#6B7785] mt-0.5">
                     {notifPermission === "denied"
                       ? "⚠️ Blocked in browser — allow in site settings"
                       : "Get reminded if you haven't practiced today"}
                   </p>
                 </div>
                 <button
+                  role="switch"
+                  aria-checked={notifEnabled}
+                  aria-label="Daily Practice Reminder"
                   onClick={handleNotifToggle}
                   disabled={notifPermission === "denied"}
                   className={`relative w-12 h-6 rounded-full transition-all shrink-0 disabled:opacity-40 ${
@@ -172,23 +182,23 @@ export default function Settings() {
                 </button>
               </div>
               {!notifEnabled && notifPermission !== "denied" && (
-                <p className="text-[11px] text-slate-400 text-center">
+                <p className="text-[11px] text-[#6B7785] text-center">
                   Toggle on to allow daily English practice reminders
                 </p>
               )}
             </div>
-          </Card>
+          </ClayCard>
         )}
 
         {/* Voice & Speech */}
-        <Card>
-          <CardHeader icon={<Volume2 size={15} className="text-white" />} iconBg="linear-gradient(135deg,#0ea5e9,#0284c7)" title="Voice & Speech" />
+        <ClayCard>
+          <ClayCardHeader icon={<Volume2 size={15} className="text-white" />} iconBg="linear-gradient(135deg,#1CB0F6,#0E8FD4)" title="Voice & Speech" />
 
           {/* Speed */}
           <div className="px-4 pb-1">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-                <Gauge size={14} className="text-slate-400" /> Speech Speed
+              <span className="text-sm font-bold text-[#1A2B3C] flex items-center gap-1.5">
+                <Gauge size={14} className="text-[#6B7785]" /> Speech Speed
               </span>
             </div>
             <div className="flex gap-2 mb-4">
@@ -196,11 +206,13 @@ export default function Settings() {
                 const isActive = rateKey === opt.key;
                 return (
                   <button key={opt.key} onClick={() => handleRateChange(opt.key)}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                    className="flex-1 py-2.5 rounded-[16px] text-sm font-bold transition-all"
                     style={{
-                      background: isActive ? "linear-gradient(135deg,#0e5fa8,#1a8fd1)" : "#f5f8fc",
-                      color: isActive ? "#fff" : "#64748b",
-                      boxShadow: isActive ? "0 2px 8px rgba(14,95,168,0.3)" : "none",
+                      background: isActive ? "linear-gradient(135deg,#1CB0F6,#0E8FD4)" : "#EAF4FF",
+                      color: isActive ? "#fff" : "#6B7785",
+                      boxShadow: isActive
+                        ? "-2px -2px 5px rgba(255,255,255,0.55), 3px 3px 10px rgba(14,143,212,0.38)"
+                        : "inset 1px 1px 4px rgba(28,176,246,0.1), inset -1px -1px 3px rgba(255,255,255,0.9)",
                     }}>
                     {opt.label}
                     <span className="block text-[10px] font-normal mt-0.5 opacity-70">{opt.hint}</span>
@@ -212,13 +224,18 @@ export default function Settings() {
             {/* Voice picker */}
             {voices.length > 0 && (
               <>
-                <p className="text-sm font-semibold text-slate-700 flex items-center gap-1.5 mb-2">
-                  <Volume2 size={14} className="text-slate-400" /> AI Voice
+                <p className="text-sm font-bold text-[#1A2B3C] flex items-center gap-1.5 mb-2">
+                  <Volume2 size={14} className="text-[#6B7785]" /> AI Voice
                 </p>
                 <select
                   value={selectedVoiceURI}
                   onChange={e => handleVoiceChange(e.target.value)}
-                  className="w-full h-11 rounded-xl border border-slate-200 bg-[#f5f8fc] px-3 text-sm text-slate-700 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                  className="w-full h-11 rounded-[16px] px-3 text-sm text-[#1A2B3C] mb-3 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  style={{
+                    background: "#EAF4FF",
+                    border: "none",
+                    boxShadow: "inset 1px 1px 4px rgba(28,176,246,0.12), inset -1px -1px 3px rgba(255,255,255,0.9)",
+                  }}>
                   {voices.map(v => (
                     <option key={v.voiceURI} value={v.voiceURI}>
                       {v.name} ({v.lang}){v.lang === "en-IN" ? " ⭐" : ""}
@@ -230,83 +247,86 @@ export default function Settings() {
 
             {/* Test button */}
             <button onClick={handleTestVoice} disabled={testPlaying}
-              className="w-full h-11 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 mb-3"
+              className="clay-btn w-full h-11 text-sm flex items-center justify-center gap-2 mb-3"
               style={{
-                background: testPlaying ? "#f5f8fc" : "linear-gradient(135deg,#0e5fa8,#1a8fd1)",
-                color: testPlaying ? "#94a3b8" : "#fff",
-                boxShadow: testPlaying ? "none" : "0 2px 8px rgba(14,95,168,0.3)",
+                background: testPlaying ? "#EAF4FF" : undefined,
+                color: testPlaying ? "#94a3b8" : undefined,
+                boxShadow: testPlaying ? "inset 2px 2px 6px rgba(28,176,246,0.12), inset -1px -1px 3px rgba(255,255,255,0.9)" : undefined,
               }}>
               {testPlaying ? "🔊 Playing..." : "▶ Test Voice"}
             </button>
-            <p className="text-[11px] text-slate-400 text-center pb-1">
+            <p className="text-[11px] text-[#6B7785] text-center pb-1">
               Available voices depend on your device & browser
             </p>
           </div>
-        </Card>
+        </ClayCard>
 
         {/* Subscription */}
-        <Card>
-          <CardHeader icon={<Zap size={15} className="text-white" />} iconBg="linear-gradient(135deg,#f59e0b,#d97706)" title="Subscription" />
+        <ClayCard>
+          <ClayCardHeader icon={<Zap size={15} className="text-white" />} iconBg="linear-gradient(135deg,#f59e0b,#d97706)" title="Subscription" />
           <div className="px-4 pb-4">
-            <div className="flex items-center justify-between p-3 rounded-xl" style={{ background: "#f5f8fc" }}>
+            <div className="flex items-center justify-between p-3 rounded-[16px]"
+              style={{ background: "#EAF4FF", boxShadow: "inset 1px 1px 4px rgba(28,176,246,0.12), inset -1px -1px 3px rgba(255,255,255,0.9)" }}>
               <div>
-                <p className="font-bold text-slate-800 text-sm capitalize">{profile?.subscription ?? "trial"} Plan</p>
+                <p className="font-black text-[#1A2B3C] text-sm capitalize">{profile?.subscription ?? "trial"} Plan</p>
                 {profile?.trialEndsAt && profile.subscription === "trial" && (
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-[#6B7785] mt-0.5">
                     Trial ends {new Date(profile.trialEndsAt).toLocaleDateString()}
                   </p>
                 )}
               </div>
               {(profile?.subscription ?? "trial") !== "pro" && (
                 <button onClick={() => setLocation("/subscription")}
-                  className="text-xs font-bold px-3 py-1.5 rounded-xl text-white shadow-md"
-                  style={{ background: "linear-gradient(135deg,#0e5fa8,#1a8fd1)" }}>
+                  className="clay-btn text-xs px-3 py-1.5"
+                  style={{ borderRadius: 12 }}>
                   View Plans
                 </button>
               )}
             </div>
           </div>
-        </Card>
+        </ClayCard>
 
         {/* Legal */}
-        <Card>
-          <CardHeader icon={<Shield size={15} className="text-white" />} iconBg="linear-gradient(135deg,#6366f1,#4f46e5)" title="Legal & Info" />
+        <ClayCard>
+          <ClayCardHeader icon={<Shield size={15} className="text-white" />} iconBg="linear-gradient(135deg,#6366f1,#4f46e5)" title="Legal & Info" />
           <div className="px-2 pb-2">
             <SettingsRow icon={<FileText size={15} />} label="Privacy Policy" onClick={() => setLocation("/privacy-policy")} />
             <SettingsRow icon={<FileText size={15} />} label="Terms of Service" onClick={() => setLocation("/terms")} />
-            <SettingsRow icon={<Info size={15} />} label="About ZX-Chat AI" onClick={() => setLocation("/about")} last />
+            <SettingsRow icon={<Info size={15} />} label="About EngliFly" onClick={() => setLocation("/about")} last />
           </div>
-        </Card>
+        </ClayCard>
 
         {/* Sign out */}
         <button
           onClick={() => { logout(); setLocation("/login"); }}
-          className="w-full flex items-center gap-2.5 justify-center py-3.5 rounded-2xl text-sm font-bold transition-colors"
-          style={{ background: "#fff1f2", color: "#e11d48", border: "1.5px solid #fecdd3" }}>
+          className="w-full flex items-center gap-2.5 justify-center py-3.5 rounded-[24px] text-sm font-bold transition-colors clay-card"
+          style={{ color: "#e11d48", background: "#fff1f2", boxShadow: "-3px -3px 8px rgba(255,255,255,0.9), 4px 4px 12px rgba(225,29,72,0.15)" }}>
           <LogOut size={16} />
           Sign out
         </button>
       </div>
+
+      <BottomNav />
     </div>
   );
 }
 
-function Card({ children }: { children: React.ReactNode }) {
+function ClayCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden fade-up">
+    <div className="clay-card overflow-hidden fade-up">
       {children}
     </div>
   );
 }
 
-function CardHeader({ icon, iconBg, title }: { icon: React.ReactNode; iconBg: string; title: string }) {
+function ClayCardHeader({ icon, iconBg, title }: { icon: React.ReactNode; iconBg: string; title: string }) {
   return (
     <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+      <div className="w-9 h-9 rounded-[14px] flex items-center justify-center shrink-0 clay-icon"
         style={{ background: iconBg }}>
         {icon}
       </div>
-      <p className="font-bold text-slate-800 text-sm">{title}</p>
+      <p className="font-black text-[#1A2B3C] text-sm">{title}</p>
     </div>
   );
 }
@@ -318,13 +338,13 @@ function SettingsRow({ icon, label, value, onClick, last }: {
     <>
       <button
         onClick={onClick}
-        className="w-full flex items-center gap-3 px-3 py-3.5 rounded-xl hover:bg-slate-50 active:bg-slate-100 transition-colors text-left">
-        <span className="text-slate-400 shrink-0">{icon}</span>
-        <span className="flex-1 text-sm font-medium text-slate-700">{label}</span>
-        {value && <span className="text-xs text-slate-400 mr-1">{value}</span>}
-        <ChevronRight size={15} className="text-slate-300 shrink-0" />
+        className="w-full flex items-center gap-3 px-3 py-3.5 rounded-[16px] transition-colors text-left active:bg-[#EAF4FF]">
+        <span className="text-[#6B7785] shrink-0">{icon}</span>
+        <span className="flex-1 text-sm font-semibold text-[#1A2B3C]">{label}</span>
+        {value && <span className="text-xs text-[#6B7785] mr-1">{value}</span>}
+        <ChevronRight size={15} className="text-[#6B7785] shrink-0" />
       </button>
-      {!last && <div className="h-px bg-slate-100 mx-3" />}
+      {!last && <div className="h-px bg-[#EAF4FF] mx-3" />}
     </>
   );
 }

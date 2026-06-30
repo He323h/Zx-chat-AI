@@ -21,7 +21,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    port: 5000,
+    port: (() => { const p = Number(process.env.PORT); return Number.isFinite(p) && p > 0 ? p : 5000; })(),
     host: "0.0.0.0",
     allowedHosts: true,
     proxy: {

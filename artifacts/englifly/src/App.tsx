@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -30,9 +30,53 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
 });
 
+function SplashScreen() {
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{
+        background: "linear-gradient(135deg, #1CB0F6, #0E8FD4)",
+      }}
+    >
+      {/* Accessible loading announcement */}
+      <span role="status" aria-live="polite" className="sr-only">Loading EngliFly…</span>
+      {/* Soft radial glow behind logo */}
+      <div
+        className="absolute"
+        style={{
+          width: 280,
+          height: 280,
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(111,211,255,0.4) 0%, transparent 70%)",
+        }}
+      />
+      <img
+        src="/owl-logo.png"
+        alt="EngliFly"
+        style={{
+          width: "38vw",
+          maxWidth: 200,
+          minWidth: 120,
+          position: "relative",
+          zIndex: 1,
+          filter: "drop-shadow(0 8px 24px rgba(0,0,0,0.18))",
+          animation: "scale-in 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards",
+        }}
+      />
+    </div>
+  );
+}
+
 function AuthGate() {
   const { user, loading } = useAuth();
   const [location, setLocation] = useLocation();
+  const [showSplash, setShowSplash] = useState(true);
+
+  // Splash shows for at least 1.5 s
+  useEffect(() => {
+    const t = setTimeout(() => setShowSplash(false), 1500);
+    return () => clearTimeout(t);
+  }, []);
 
   // Update streak whenever user is authenticated
   useEffect(() => {
@@ -49,17 +93,8 @@ function AuthGate() {
     }
   }, [user, loading, location, setLocation]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center shadow-md animate-pulse">
-            <span className="text-xl text-primary-foreground font-bold">ZX</span>
-          </div>
-          <p className="text-muted-foreground text-sm">Loading...</p>
-        </div>
-      </div>
-    );
+  if (loading || showSplash) {
+    return <SplashScreen />;
   }
   return null;
 }
