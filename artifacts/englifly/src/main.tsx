@@ -4,17 +4,15 @@ import "./index.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
 
-// Remove splash screen after React has painted its first frame
-// Using two rAF calls guarantees the browser has actually committed the paint
+// Remove the HTML splash as soon as React paints its first frame.
+// The React SplashScreen component renders underneath and takes over seamlessly —
+// both share the same gradient, so the handoff is invisible to the user.
 requestAnimationFrame(() => {
-  requestAnimationFrame(() => {
-    const splash = document.getElementById("splash");
-    if (splash) {
-      splash.classList.add("splash-hide");
-      // Remove from DOM after the CSS transition completes (0.45s)
-      setTimeout(() => splash.remove(), 480);
-    }
-  });
+  const splash = document.getElementById("splash");
+  if (splash) {
+    splash.classList.add("splash-hide");
+    setTimeout(() => splash.remove(), 320);
+  }
 });
 
 if ("serviceWorker" in navigator) {
