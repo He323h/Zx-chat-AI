@@ -124,7 +124,12 @@ export function useSendMessage() {
 
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // Lightweight app-identity header — the server rejects requests without it.
+          // This prevents random bots/scrapers from calling the AI endpoint directly.
+          "X-App-Client": "englifly-v1",
+        },
         body: JSON.stringify({ message, category, history }),
       });
 

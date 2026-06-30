@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
-import { mockSignUp } from "@/lib/mockAuth";
+import { mockSignUp, validatePassword } from "@/lib/mockAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +22,11 @@ export default function Signup() {
     e.preventDefault();
     setError("");
     if (password !== confirm) { setError("Passwords don't match."); return; }
-    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
+
+    // Enforce strong password even before Firebase receives it
+    const pwErr = validatePassword(password);
+    if (pwErr) { setError(pwErr); return; }
+
     setLoading(true);
     if (!isFirebaseConfigured || !auth) {
       mockSignUp(email, password);
@@ -34,7 +38,7 @@ export default function Signup() {
       await createUserWithEmailAndPassword(auth, email, password);
       setLocation("/home");
     } catch (err: any) {
-      setError(err?.code === "auth/email-already-in-use" ? "Email already registered. Try signing in." : (err?.message ?? "Signup failed."));
+      setError(err?.code === "auth/email-already-in-use" ? "Email already registered. Try signing in." : "Signup failed. Please try again.");
       setLoading(false);
     }
   }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
-import { mockSignIn } from "@/lib/mockAuth";
+import { mockSignIn, checkLoginAllowed, recordFailedAttempt } from "@/lib/mockAuth";
 
 const googleProvider = new GoogleAuthProvider();
 
@@ -18,6 +18,14 @@ export default function Login() {
     e.preventDefault();
     setError("");
     if (!email || !password) { setError("Please enter your email and password."); return; }
+
+    // Brute-force guard (applies in both mock and Firebase mode)
+    const rateCheck = checkLoginAllowed();
+    if (!rateCheck.allowed) {
+      setError(`Too many failed attempts. Try again in ${rateCheck.waitMinutes} minute${rateCheck.waitMinutes !== 1 ? "s" : ""}.`);
+      return;
+    }
+
     setLoading(true);
     if (!isFirebaseConfigured || !auth) {
       mockSignIn(email, password);
@@ -29,7 +37,9 @@ export default function Login() {
       await signInWithEmailAndPassword(auth, email, password);
       setLocation("/home");
     } catch (err: any) {
-      setError(err?.code === "auth/invalid-credential" ? "Invalid email or password." : (err?.message ?? "Sign in failed."));
+      recordFailedAttempt();
+      // Use a generic message — never reveal whether email or password was wrong
+      setError("Invalid email or password.");
       setLoading(false);
     }
   }
