@@ -115,11 +115,11 @@
 @layer utilities {
   /* ─── Message bubble entrance ─── */
   @keyframes bubble-in-right {
-    from { opacity: 0; transform: translateX(18px) translateY(6px) scale(0.93); }
+    from { opacity: 0; transform: translateX(20px) translateY(8px) scale(0.88); }
     to   { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
   }
   @keyframes bubble-in-left {
-    from { opacity: 0; transform: translateX(-18px) translateY(6px) scale(0.93); }
+    from { opacity: 0; transform: translateX(-20px) translateY(8px) scale(0.88); }
     to   { opacity: 1; transform: translateX(0) translateY(0) scale(1); }
   }
   @keyframes fade-up {
@@ -130,11 +130,15 @@
     from { opacity: 0; transform: translateY(20px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.7); }
+    to   { opacity: 1; transform: scale(1); }
+  }
 
   /* ─── Typing / streaming ─── */
   @keyframes typing-dot {
-    0%, 60%, 100% { transform: translateY(0); opacity: 0.3; }
-    30%           { transform: translateY(-6px); opacity: 1; }
+    0%, 60%, 100% { transform: translateY(0) scale(1);    opacity: 0.35; }
+    30%           { transform: translateY(-5px) scale(1.1); opacity: 1; }
   }
   @keyframes cursor-blink {
     0%, 100% { opacity: 1; }
@@ -157,62 +161,99 @@
 
   /* ─── Waveform bars ─── */
   @keyframes wave-bar-1 {
-    0%,100% { height: 5px; }  20% { height: 18px; } 60% { height: 9px; }
+    0%,100% { height: 5px; }  20% { height: 20px; } 60% { height: 10px; }
   }
   @keyframes wave-bar-2 {
-    0%,100% { height: 10px; } 35% { height: 26px; } 70% { height: 7px; }
+    0%,100% { height: 12px; } 35% { height: 28px; } 70% { height: 8px; }
   }
   @keyframes wave-bar-3 {
-    0%,100% { height: 20px; } 50% { height: 30px; } 25% { height: 5px; }
+    0%,100% { height: 22px; } 50% { height: 32px; } 25% { height: 6px; }
   }
   @keyframes wave-bar-4 {
-    0%,100% { height: 8px; }  45% { height: 22px; } 80% { height: 13px; }
+    0%,100% { height: 9px; }  45% { height: 24px; } 80% { height: 15px; }
   }
   @keyframes wave-bar-5 {
-    0%,100% { height: 14px; } 60% { height: 28px; } 20% { height: 6px; }
+    0%,100% { height: 16px; } 60% { height: 30px; } 20% { height: 7px; }
+  }
+  @keyframes wave-bar-6 {
+    0%,100% { height: 8px; }  30% { height: 22px; } 65% { height: 12px; }
+  }
+  @keyframes wave-bar-7 {
+    0%,100% { height: 14px; } 45% { height: 26px; } 75% { height: 6px; }
+  }
+
+  /* ─── Avatar glow ─── */
+  @keyframes avatar-ai-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5), 0 2px 10px rgba(0,0,0,0.18); }
+    50%      { box-shadow: 0 0 0 6px rgba(59,130,246,0.15), 0 2px 10px rgba(0,0,0,0.18); }
+  }
+  @keyframes avatar-ai-think {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.6); transform: scale(1); }
+    50%      { box-shadow: 0 0 0 8px rgba(245,158,11,0.12); transform: scale(1.1); }
+  }
+  @keyframes avatar-ai-speak {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); transform: scale(1); }
+    50%      { box-shadow: 0 0 0 10px rgba(34,197,94,0.1); transform: scale(1.08); }
+  }
+
+  /* ─── Bubble praise glow ─── */
+  @keyframes bubble-praise-glow {
+    0%   { outline-color: rgba(251,191,36,1); box-shadow: 0 0 0 10px rgba(251,191,36,0.25), 0 6px 28px rgba(59,130,246,0.22); }
+    60%  { outline-color: rgba(251,191,36,0.6); }
+    100% { outline-color: rgba(251,191,36,0.2); box-shadow: 0 0 0 2px rgba(251,191,36,0.05), 0 6px 28px rgba(59,130,246,0.22); }
   }
 
   /* ─── Call mode ─── */
   @keyframes call-ring-pulse {
     0%   { transform: scale(1);    opacity: 0.7; }
-    50%  { transform: scale(1.14); opacity: 0.25; }
+    50%  { transform: scale(1.16); opacity: 0.2; }
     100% { transform: scale(1);    opacity: 0.7; }
   }
   @keyframes call-ring-pulse-2 {
     0%   { transform: scale(1);    opacity: 0.5; }
-    50%  { transform: scale(1.22); opacity: 0.1; }
+    50%  { transform: scale(1.26); opacity: 0.08; }
     100% { transform: scale(1);    opacity: 0.5; }
   }
   @keyframes call-avatar-breathe {
-    0%, 100% { transform: scale(1); filter: brightness(1); }
-    50%      { transform: scale(1.05); filter: brightness(1.1); }
+    0%, 100% { transform: scale(1);    filter: brightness(1); }
+    50%      { transform: scale(1.05); filter: brightness(1.12); }
   }
   @keyframes call-phase-blink {
     0%, 100% { opacity: 1; }
-    50%      { opacity: 0.4; }
+    50%      { opacity: 0.35; }
   }
-  @keyframes call-glow-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 currentColor; }
-    50%      { box-shadow: 0 0 28px 8px currentColor; }
+
+  /* ─── Score pop (count-up finish) ─── */
+  @keyframes score-pop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.35); }
+    75%  { transform: scale(0.9); }
+    100% { transform: scale(1); }
   }
 
   /* ─── Confetti ─── */
-  @keyframes confetti-1 { 0% { transform: translate(0,0) rotate(0deg);   opacity:1; } 100% { transform: translate(-90px,260px) rotate(720deg);  opacity:0; } }
-  @keyframes confetti-2 { 0% { transform: translate(0,0) rotate(0deg);   opacity:1; } 100% { transform: translate(90px,240px)  rotate(-540deg); opacity:0; } }
-  @keyframes confetti-3 { 0% { transform: translate(0,0) rotate(0deg);   opacity:1; } 100% { transform: translate(-50px,300px) rotate(540deg);  opacity:0; } }
-  @keyframes confetti-4 { 0% { transform: translate(0,0) rotate(0deg);   opacity:1; } 100% { transform: translate(60px,280px)  rotate(-720deg); opacity:0; } }
-  @keyframes confetti-5 { 0% { transform: translate(0,0) rotate(0deg);   opacity:1; } 100% { transform: translate(-120px,220px) rotate(360deg); opacity:0; } }
-  @keyframes confetti-6 { 0% { transform: translate(0,0) rotate(0deg);   opacity:1; } 100% { transform: translate(110px,260px) rotate(-360deg); opacity:0; } }
-  @keyframes confetti-7 { 0% { transform: translate(0,0) rotate(0deg);   opacity:1; } 100% { transform: translate(-30px,320px) rotate(900deg);  opacity:0; } }
-  @keyframes confetti-8 { 0% { transform: translate(0,0) rotate(0deg);   opacity:1; } 100% { transform: translate(40px,290px)  rotate(-900deg); opacity:0; } }
+  @keyframes confetti-1  { 0% { transform: translate(0,0) rotate(0deg);    opacity:1; } 100% { transform: translate(-90px,260px)  rotate(720deg);   opacity:0; } }
+  @keyframes confetti-2  { 0% { transform: translate(0,0) rotate(0deg);    opacity:1; } 100% { transform: translate(90px,240px)   rotate(-540deg);  opacity:0; } }
+  @keyframes confetti-3  { 0% { transform: translate(0,0) rotate(0deg);    opacity:1; } 100% { transform: translate(-50px,300px)  rotate(540deg);   opacity:0; } }
+  @keyframes confetti-4  { 0% { transform: translate(0,0) rotate(0deg);    opacity:1; } 100% { transform: translate(60px,280px)   rotate(-720deg);  opacity:0; } }
+  @keyframes confetti-5  { 0% { transform: translate(0,0) rotate(0deg);    opacity:1; } 100% { transform: translate(-120px,220px) rotate(360deg);   opacity:0; } }
+  @keyframes confetti-6  { 0% { transform: translate(0,0) rotate(0deg);    opacity:1; } 100% { transform: translate(110px,260px)  rotate(-360deg);  opacity:0; } }
+  @keyframes confetti-7  { 0% { transform: translate(0,0) rotate(0deg);    opacity:1; } 100% { transform: translate(-30px,320px)  rotate(900deg);   opacity:0; } }
+  @keyframes confetti-8  { 0% { transform: translate(0,0) rotate(0deg);    opacity:1; } 100% { transform: translate(40px,290px)   rotate(-900deg);  opacity:0; } }
+  @keyframes confetti-9  { 0% { transform: translate(0,0) rotate(0deg);    opacity:1; } 100% { transform: translate(-75px,200px)  rotate(640deg);   opacity:0; } }
+  @keyframes confetti-10 { 0% { transform: translate(0,0) rotate(0deg);    opacity:1; } 100% { transform: translate(85px,310px)   rotate(-480deg);  opacity:0; } }
+  @keyframes confetti-11 { 0% { transform: translate(0,0) rotate(0deg);    opacity:1; } 100% { transform: translate(-140px,240px) rotate(800deg);   opacity:0; } }
+  @keyframes confetti-12 { 0% { transform: translate(0,0) rotate(0deg);    opacity:1; } 100% { transform: translate(130px,200px)  rotate(-600deg);  opacity:0; } }
 
-  /* ─── Applied classes ─── */
-  .bubble-in-right { animation: bubble-in-right 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards; }
-  .bubble-in-left  { animation: bubble-in-left  0.28s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  /* ─── Applied utility classes ─── */
+  .bubble-in-right { animation: bubble-in-right 0.32s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  .bubble-in-left  { animation: bubble-in-left  0.32s cubic-bezier(0.34,1.56,0.64,1) forwards; }
   .fade-up         { animation: fade-up    0.3s  ease-out forwards; }
   .slide-in-up     { animation: slide-in-up 0.35s ease-out forwards; }
+  .scale-in        { animation: scale-in   0.28s cubic-bezier(0.34,1.56,0.64,1) forwards; }
   .mic-pulsing     { animation: mic-pulse   1.2s  ease-in-out infinite; }
   .mic-breathe     { animation: mic-breathe 1.6s  ease-in-out infinite; }
+  .score-pop       { animation: score-pop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
 
   .typing-dot                   { animation: typing-dot 1.3s ease-in-out infinite; }
   .typing-dot:nth-child(2)      { animation-delay: 0.22s; }
@@ -230,38 +271,71 @@
   }
 
   .typing-shimmer {
-    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%);
     background-size: 200% 100%;
     animation: shimmer-slide 1.6s ease-in-out infinite;
   }
 
-  .wave-bar { width: 3px; border-radius: 3px; min-height: 5px; }
+  .wave-bar { width: 3.5px; border-radius: 3px; min-height: 5px; }
   .wave-bar-1 { animation: wave-bar-1 0.65s ease-in-out infinite; }
   .wave-bar-2 { animation: wave-bar-2 0.75s ease-in-out infinite 0.1s; }
   .wave-bar-3 { animation: wave-bar-3 0.55s ease-in-out infinite 0.2s; }
   .wave-bar-4 { animation: wave-bar-4 0.85s ease-in-out infinite 0.05s; }
   .wave-bar-5 { animation: wave-bar-5 0.7s  ease-in-out infinite 0.15s; }
+  .wave-bar-6 { animation: wave-bar-6 0.6s  ease-in-out infinite 0.25s; }
+  .wave-bar-7 { animation: wave-bar-7 0.8s  ease-in-out infinite 0.08s; }
 
-  /* ─── Bubble styles (glassmorphism) ─── */
-  .bubble-sent {
-    background: linear-gradient(135deg, hsl(var(--primary)), hsl(200,85%,33%));
+  /* ─── Avatar glows ─── */
+  .avatar-ai-glow  { animation: avatar-ai-glow  2.8s ease-in-out infinite; }
+  .avatar-ai-think { animation: avatar-ai-think 1.4s ease-in-out infinite; }
+  .avatar-ai-speak { animation: avatar-ai-speak 1.8s ease-in-out infinite; }
+
+  /* ─── Premium Glassmorphism Bubble Styles ─── */
+
+  /* AI / received — frosted blue glass */
+  .bubble-ai, .bubble-recv {
+    background: rgba(219,234,254,0.82);
+    color: hsl(215, 25%, 12%);
+    border-radius: 18px 18px 18px 4px;
+    border: 1px solid rgba(147,197,253,0.55);
+    box-shadow:
+      0 6px 28px rgba(59,130,246,0.16),
+      0 1px 6px rgba(0,0,0,0.04),
+      inset 0 1px 0 rgba(255,255,255,0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* User / sent — violet-purple glass */
+  .bubble-user, .bubble-sent {
+    background: linear-gradient(135deg, rgba(124,58,237,0.95) 0%, rgba(91,33,182,0.92) 100%);
     color: #fff;
     border-radius: 18px 18px 4px 18px;
-    box-shadow: 0 3px 14px rgba(14,95,168,0.28), inset 0 1px 0 rgba(255,255,255,0.18);
-  }
-  .bubble-recv {
-    background: rgba(255,255,255,0.94);
-    color: hsl(var(--foreground));
-    border-radius: 18px 18px 18px 4px;
-    border: 1px solid rgba(210,220,235,0.7);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(167,139,250,0.35);
+    box-shadow:
+      0 6px 28px rgba(109,40,217,0.42),
+      0 1px 6px rgba(0,0,0,0.14),
+      inset 0 1px 0 rgba(255,255,255,0.2);
   }
 
-  /* Call mode */
-  .call-ring-1  { animation: call-ring-pulse   2s ease-in-out infinite; }
-  .call-ring-2  { animation: call-ring-pulse-2 2s ease-in-out infinite 0.35s; }
-  .call-avatar  { animation: call-avatar-breathe 2.8s ease-in-out infinite; }
+  /* Golden praise highlight — applied on top of .bubble-ai */
+  .bubble-praise {
+    outline: 2.5px solid rgba(251,191,36,0.55);
+    outline-offset: 2px;
+    animation: bubble-praise-glow 2.5s ease-out forwards;
+  }
+
+  /* ─── Call mode ─── */
+  .call-ring-1    { animation: call-ring-pulse   2.2s ease-in-out infinite; }
+  .call-ring-2    { animation: call-ring-pulse-2 2.2s ease-in-out infinite 0.4s; }
+  .call-avatar    { animation: call-avatar-breathe 3s ease-in-out infinite; }
   .call-phase-dot { animation: call-phase-blink 1.2s ease-in-out infinite; }
+
+  /* ─── 3D button press feel ─── */
+  .btn-3d {
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+  .btn-3d:active {
+    transform: scale(0.93) translateY(1.5px);
+  }
 }

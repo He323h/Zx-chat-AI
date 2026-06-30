@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, Send, BookOpen, RotateCcw } from "lucide-react";
 import { useSendMessage } from "@/lib/api";
 import { logActivity, addTopic, incrementMsgs } from "@/lib/dailyStats";
-import { StreamingText, TypingBubble } from "@/components/chat-ui";
+import { StreamingText, TypingBubble, ChatBackground, GlowAvatar } from "@/components/chat-ui";
 
 interface Message {
   id: string;
@@ -266,123 +266,144 @@ export default function TeacherPage() {
 
   const dayNumber = sessions.length + 1;
 
+  const userInitial = (user?.email?.[0] ?? user?.displayName?.[0] ?? "U").toUpperCase();
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#f2f5f9" }}>
+    <>
+      <ChatBackground variant="teal" />
+      <div className="min-h-screen flex flex-col relative z-10" style={{ background: "transparent" }}>
 
-      {/* Header */}
-      <div className="px-4 pt-10 pb-3 flex items-center gap-3 sticky top-0 z-20"
-        style={{ background: "linear-gradient(135deg,#0d9488,#0891b2)" }}>
-        <button onClick={() => setLocation("/home")}
-          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-          style={{ background: "rgba(255,255,255,0.2)" }}>
-          <ArrowLeft size={16} className="text-white" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className="text-white font-bold text-sm leading-tight truncate">
-            🎓 AI Teacher{profile ? ` — ${profile.subject}` : ""}
-          </p>
-          <p className="text-white/60 text-[11px]">
-            {isOnboarding
-              ? "First time setup"
-              : `Day ${dayNumber} · ${profile?.level ?? ""} · ${profile?.hoursPerDay}h/day`}
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5">
-          {!isOnboarding && messages.length >= 4 && (
-            <button
-              onClick={endSession}
-              className="text-[11px] font-bold px-3 py-1.5 rounded-full text-teal-900"
-              style={{ background: "rgba(255,255,255,0.9)" }}>
-              End Session ✓
-            </button>
-          )}
-          <button onClick={resetTeacher}
-            className="w-8 h-8 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(255,255,255,0.15)" }}
-            title="Reset teacher">
-            <RotateCcw size={14} className="text-white/70" />
+        {/* Header */}
+        <div className="px-4 pt-10 pb-3 flex items-center gap-3 sticky top-0 z-20"
+          style={{ background: "linear-gradient(135deg,#0d9488,#0891b2)" }}>
+          <button onClick={() => setLocation("/home")}
+            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 btn-3d"
+            style={{ background: "rgba(255,255,255,0.2)" }}>
+            <ArrowLeft size={16} className="text-white" />
           </button>
-        </div>
-      </div>
-
-      {/* Progress bar (days) */}
-      {!isOnboarding && sessions.length > 0 && (
-        <div className="px-4 py-2" style={{ background: "linear-gradient(135deg,#0d9488,#0891b2)" }}>
-          <div className="flex gap-1 pb-1">
-            {Array.from({ length: Math.min(sessions.length + 1, 14) }, (_, i) => (
-              <div key={i} className="h-1.5 flex-1 rounded-full"
-                style={{
-                  background: i < sessions.length
-                    ? "rgba(255,255,255,0.9)"
-                    : i === sessions.length
-                    ? "rgba(255,255,255,0.4)"
-                    : "rgba(255,255,255,0.15)",
-                }} />
-            ))}
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-sm leading-tight truncate">
+              🎓 AI Teacher{profile ? ` — ${profile.subject}` : ""}
+            </p>
+            <p className="text-white/60 text-[11px]">
+              {isOnboarding
+                ? "First time setup"
+                : `Day ${dayNumber} · ${profile?.level ?? ""} · ${profile?.hoursPerDay}h/day`}
+            </p>
           </div>
-          <p className="text-white/50 text-[10px] text-right">{sessions.length} sessions completed</p>
-        </div>
-      )}
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {messages.map(msg => (
-          <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            {msg.role === "assistant" && (
-              <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mr-2 mt-0.5 shadow-sm"
-                style={{ background: "linear-gradient(135deg,#0d9488,#0891b2)" }}>
-                <BookOpen size={13} className="text-white" />
-              </div>
+          <div className="flex items-center gap-1.5">
+            {!isOnboarding && messages.length >= 4 && (
+              <button onClick={endSession}
+                className="text-[11px] font-bold px-3 py-1.5 rounded-full text-teal-900 btn-3d"
+                style={{ background: "rgba(255,255,255,0.9)" }}>
+                End Session ✓
+              </button>
             )}
-            <div
-              className={`max-w-[82%] px-4 py-3 text-sm leading-relaxed ${
-                msg.role === "user"
-                  ? "bubble-sent bubble-in-right rounded-br-sm text-white"
-                  : "bubble-recv bubble-in-left rounded-bl-sm text-slate-800"
-              }`}>
-              {msg.role === "assistant" && msg.id === streamingId
-                ? <StreamingText text={msg.content} onDone={() => setStreamingId(null)} />
-                : <span className="whitespace-pre-wrap">{msg.content}</span>}
-            </div>
+            <button onClick={resetTeacher}
+              className="w-8 h-8 rounded-full flex items-center justify-center btn-3d"
+              style={{ background: "rgba(255,255,255,0.15)" }}
+              title="Reset teacher">
+              <RotateCcw size={14} className="text-white/70" />
+            </button>
           </div>
-        ))}
+        </div>
 
-        {isTyping && (
-          <TypingBubble
-            avatarContent={<BookOpen size={13} />}
-            avatarBg="linear-gradient(135deg,#0d9488,#0891b2)"
-            dotColor="#2dd4bf"
-          />
+        {/* Progress bar (days) */}
+        {!isOnboarding && sessions.length > 0 && (
+          <div className="px-4 py-2" style={{ background: "linear-gradient(135deg,#0d9488,#0891b2)" }}>
+            <div className="flex gap-1 pb-1">
+              {Array.from({ length: Math.min(sessions.length + 1, 14) }, (_, i) => (
+                <div key={i} className="h-1.5 flex-1 rounded-full"
+                  style={{
+                    background: i < sessions.length
+                      ? "rgba(255,255,255,0.9)"
+                      : i === sessions.length
+                      ? "rgba(255,255,255,0.4)"
+                      : "rgba(255,255,255,0.15)",
+                  }} />
+              ))}
+            </div>
+            <p className="text-white/50 text-[10px] text-right">{sessions.length} sessions completed</p>
+          </div>
         )}
-        <div ref={messagesEndRef} />
-      </div>
 
-      {/* Input */}
-      <div className="px-4 pb-6 pt-2 bg-white border-t border-slate-100 sticky bottom-0">
-        <div className="flex items-end gap-2">
-          <textarea
-            ref={inputRef}
-            value={inputText}
-            onChange={e => setInputText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            rows={1}
-            placeholder={isOnboarding ? "Jawab yahan likho..." : "Teacher se baat karo..."}
-            className="flex-1 resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 leading-snug"
-            style={{ maxHeight: 120 }}
-            disabled={isTyping}
-          />
-          <button
-            onClick={handleSend}
-            disabled={!inputText.trim() || isTyping}
-            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-opacity"
-            style={{
-              background: "linear-gradient(135deg,#0d9488,#0891b2)",
-              opacity: !inputText.trim() || isTyping ? 0.4 : 1,
-            }}>
-            <Send size={17} className="text-white" />
-          </button>
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+          {messages.map(msg => (
+            <div key={msg.id} className={`flex items-end gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+              {msg.role === "assistant" && (
+                <GlowAvatar
+                  content={<BookOpen size={12} />}
+                  bg="linear-gradient(135deg,#0d9488,#0891b2)"
+                  size={28}
+                  state={isTyping ? "thinking" : "idle"}
+                />
+              )}
+              {msg.role === "user" && (
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-md"
+                  style={{ background: "linear-gradient(135deg,#7c3aed,#5b21b6)" }}>
+                  {userInitial}
+                </div>
+              )}
+              <div className={`max-w-[82%] px-4 py-3 text-sm leading-relaxed ${
+                msg.role === "user"
+                  ? "bubble-user bubble-in-right"
+                  : "bubble-ai bubble-in-left"
+              }`}>
+                {msg.role === "assistant" && msg.id === streamingId
+                  ? <StreamingText text={msg.content} onDone={() => setStreamingId(null)} />
+                  : <span className="whitespace-pre-wrap">{msg.content}</span>}
+              </div>
+            </div>
+          ))}
+
+          {isTyping && (
+            <TypingBubble
+              avatarContent={<BookOpen size={12} />}
+              avatarBg="linear-gradient(135deg,#0d9488,#0891b2)"
+              dotColor="#2dd4bf"
+            />
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="px-4 pb-6 pt-2 sticky bottom-0"
+          style={{
+            background: "rgba(255,255,255,0.88)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            borderTop: "1px solid rgba(153,246,228,0.3)",
+            boxShadow: "0 -4px 20px rgba(13,148,136,0.06)",
+          }}>
+          <div className="flex items-end gap-2">
+            <textarea
+              ref={inputRef}
+              value={inputText}
+              onChange={e => setInputText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              rows={1}
+              placeholder={isOnboarding ? "Jawab yahan likho..." : "Teacher se baat karo..."}
+              className="flex-1 resize-none rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300 leading-snug"
+              style={{
+                maxHeight: 120,
+                background: "rgba(240,253,250,0.9)",
+                border: "1px solid rgba(153,246,228,0.4)",
+              }}
+              disabled={isTyping}
+            />
+            <button onClick={handleSend} disabled={!inputText.trim() || isTyping}
+              className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all btn-3d"
+              style={{
+                background: "linear-gradient(135deg,#0d9488,#0891b2)",
+                opacity: !inputText.trim() || isTyping ? 0.4 : 1,
+                boxShadow: "0 4px 16px rgba(13,148,136,0.4)",
+              }}>
+              <Send size={17} className="text-white" />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

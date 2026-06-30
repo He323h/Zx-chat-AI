@@ -16,7 +16,10 @@ import {
   Mic, MicOff, Send, ArrowLeft, Volume2, VolumeX, Crown,
   Phone, PhoneOff,
 } from "lucide-react";
-import { StreamingText, TypingBubble, Waveform } from "@/components/chat-ui";
+import {
+  StreamingText, TypingBubble, Waveform,
+  ChatBackground, GlowAvatar, ConfettiBurst, PraiseStar, pickPraise,
+} from "@/components/chat-ui";
 
 import {
   incrementSessions, incrementMsgs, incrementCorrections,
@@ -287,6 +290,8 @@ export default function Chat() {
   const [started, setStarted] = useState(false);
   const [callMode, setCallModeState] = useState(false);
   const [streamingId, setStreamingId] = useState<string | null>(null);
+  const [praisedId, setPraisedId]     = useState<string | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Mic permission gate
   const [showMicPerm, setShowMicPerm]     = useState(false);
@@ -359,11 +364,24 @@ export default function Chat() {
             setMessages(prev => [...prev, aiMsg]);
             setStreamingId(aiMsg.id);
 
-            if (hasCorrectionSignal(data.message)) incrementCorrections();
+            const isCorrection = hasCorrectionSignal(data.message);
+            if (isCorrection) {
+              incrementCorrections();
+            } else {
+              // Positive response — show praise
+              setPraisedId(aiMsg.id);
+              setShowConfetti(true);
+              setTimeout(() => setShowConfetti(false), 2200);
+              setTimeout(() => setPraisedId(null), 6000);
+            }
 
             // Speak AI reply — English only (strip Hindi lines for TTS)
+            // Prepend praise phrase when response is positive
             if (!isMutedRef.current || callModeRef.current) {
-              const ttsText = englishOnlyForTTS(data.message);
+              const ttsBase = englishOnlyForTTS(data.message);
+              const ttsText = (!isCorrection && !callModeRef.current && ttsBase)
+                ? pickPraise() + ttsBase
+                : ttsBase;
               if (ttsText) speak(ttsText);
             }
             queryClient.invalidateQueries({ queryKey: getGetTodayUsageQueryKey({ uid }) });
@@ -496,8 +514,13 @@ export default function Chat() {
     return "idle";
   }
 
+  const userInitial = (user?.email?.[0] ?? user?.displayName?.[0] ?? "U").toUpperCase();
+
   return (
     <>
+      <ChatBackground variant="blue" />
+      <ConfettiBurst show={showConfetti} />
+
       {/* Mic permission overlay */}
       {showMicPerm && (
         <MicPermOverlay
@@ -517,17 +540,26 @@ export default function Chat() {
         />
       )}
 
-      <div className="min-h-screen flex flex-col max-w-lg mx-auto" style={{ background: "#f0f4f8" }}>
+      <div className="min-h-screen flex flex-col max-w-lg mx-auto relative z-10" style={{ background: "transparent" }}>
         {/* Header */}
-        <div className="bg-white border-b border-border px-4 py-3 flex items-center gap-3 shadow-sm shrink-0">
+        <div className="border-b border-white/60 px-4 py-3 flex items-center gap-3 shrink-0 sticky top-0 z-20"
+          style={{
+            background: "rgba(255,255,255,0.85)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            boxShadow: "0 1px 20px rgba(59,130,246,0.08)",
+          }}>
           <button onClick={() => { stopSpeaking(); stopListening(); setLocation("/home"); }}
-            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#f0f4f8] transition-colors">
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-all btn-3d"
+            style={{ background: "rgba(241,245,249,0.8)" }}>
             <ArrowLeft size={20} className="text-foreground" />
           </button>
-          <div className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold shrink-0"
-            style={{ background: "hsl(var(--primary))" }}>
-            <span className="text-base">{meta.emoji}</span>
-          </div>
+          <GlowAvatar
+            content={<span style={{ fontSize: 16 }}>{meta.emoji}</span>}
+            bg="linear-gradient(135deg,hsl(var(--primary)),hsl(200,85%,33%))"
+            size={36}
+            state={isTyping ? "thinking" : "idle"}
+          />
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-foreground text-sm leading-tight">{meta.label}</p>
             <div className="flex items-center gap-2 mt-0.5">
@@ -539,20 +571,21 @@ export default function Chat() {
           </div>
           <div className="flex items-center gap-0.5">
             {isSupported && (
-              <button
-                onClick={enterCallMode}
-                title="Start Voice Call"
-                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#f0f4f8] transition-colors disabled:opacity-40">
+              <button onClick={enterCallMode} title="Start Voice Call"
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-all btn-3d disabled:opacity-40"
+                style={{ background: "rgba(241,245,249,0.8)" }}>
                 <Phone size={17} style={{ color: "#22c55e" }} />
               </button>
             )}
             <button onClick={() => setIsMuted(m => !m)}
-              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#f0f4f8] transition-colors">
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all btn-3d"
+              style={{ background: "rgba(241,245,249,0.8)" }}>
               {isMuted ? <VolumeX size={18} className="text-muted-foreground" /> : <Volume2 size={18} style={{ color: "hsl(var(--primary))" }} />}
             </button>
             {profile?.subscription !== "pro" && (
               <button onClick={() => setLocation("/subscription")}
-                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#f0f4f8] transition-colors">
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-all btn-3d"
+                style={{ background: "rgba(241,245,249,0.8)" }}>
                 <Crown size={18} className="text-amber-500" />
               </button>
             )}
@@ -561,41 +594,73 @@ export default function Chat() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          {messages.map(msg => (
-            <div key={msg.id} className={`flex items-end gap-2 mb-2 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-              {msg.role === "assistant" && (
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm"
-                  style={{ background: "hsl(var(--primary))" }}>E</div>
-              )}
-              <div className="max-w-[78%]">
-                <div className={`px-3.5 py-2.5 text-sm leading-relaxed
-                  ${msg.role === "user" ? "bubble-sent bubble-in-right" : "bubble-recv bubble-in-left"}`}>
-                  {msg.role === "assistant" && msg.id === streamingId
-                    ? <StreamingText text={msg.content} onDone={() => setStreamingId(null)} />
-                    : msg.content}
+          {messages.map(msg => {
+            const isPraised = msg.id === praisedId;
+            return (
+              <div key={msg.id} className={`flex items-end gap-2.5 mb-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+                {msg.role === "assistant" && (
+                  <GlowAvatar
+                    content="E"
+                    bg="linear-gradient(135deg,hsl(var(--primary)),hsl(200,85%,33%))"
+                    size={28}
+                    state={isTyping && msg === messages[messages.length - 1] ? "thinking" : "idle"}
+                  />
+                )}
+                {msg.role === "user" && (
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-md"
+                    style={{ background: "linear-gradient(135deg,#7c3aed,#5b21b6)" }}>
+                    {userInitial}
+                  </div>
+                )}
+                <div className="max-w-[78%] flex flex-col gap-1">
+                  <div className={`px-3.5 py-2.5 text-sm leading-relaxed ${
+                    msg.role === "user"
+                      ? "bubble-user bubble-in-right"
+                      : `bubble-ai bubble-in-left${isPraised ? " bubble-praise" : ""}`
+                  }`}>
+                    {msg.role === "assistant" && msg.id === streamingId
+                      ? <StreamingText text={msg.content} onDone={() => setStreamingId(null)} />
+                      : msg.content}
+                  </div>
+                  {isPraised && (
+                    <div className="flex items-center gap-1 pl-1">
+                      <PraiseStar />
+                      <span className="text-[11px] font-semibold text-amber-500">Great job!</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {isTyping && (
             <TypingBubble
               avatarContent="E"
-              avatarBg="hsl(var(--primary))"
+              avatarBg="linear-gradient(135deg,hsl(var(--primary)),hsl(200,85%,33%))"
             />
           )}
           <div ref={messagesEndRef} />
         </div>
 
         {/* Input bar */}
-        <div className="bg-white border-t border-border px-3 py-3 shrink-0 shadow-lg">
+        <div className="px-3 py-3 shrink-0 sticky bottom-0"
+          style={{
+            background: "rgba(255,255,255,0.88)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            borderTop: "1px solid rgba(147,197,253,0.3)",
+            boxShadow: "0 -4px 20px rgba(59,130,246,0.06)",
+          }}>
           <div className="flex items-center gap-2">
             {isSupported && (
               <button onClick={handleMicClick} disabled={!!usage?.limitReached}
-                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-90
-                  ${isListening ? "text-white mic-breathe" : "bg-[#f0f4f8] text-muted-foreground hover:bg-[#e0e8f0]"}
+                className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all btn-3d
+                  ${isListening ? "text-white mic-breathe" : "text-muted-foreground"}
                   ${usage?.limitReached ? "opacity-40 cursor-not-allowed" : ""}`}
-                style={isListening ? { background: "hsl(var(--primary))" } : {}}>
-                {isListening ? <Mic size={18} /> : <MicOff size={18} />}
+                style={isListening
+                  ? { background: "hsl(var(--primary))" }
+                  : { background: "rgba(241,245,249,0.9)", border: "1px solid rgba(147,197,253,0.3)" }
+                }>
+                {isListening ? <Mic size={19} /> : <MicOff size={19} />}
               </button>
             )}
             <input
@@ -605,18 +670,22 @@ export default function Chat() {
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(inputText); } }}
               placeholder={isListening ? "Listening…" : usage?.limitReached ? "Daily limit reached" : "Type a message…"}
               disabled={!!usage?.limitReached || isListening}
-              className="flex-1 h-10 bg-[#f0f4f8] rounded-full px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 disabled:opacity-50 border-none"
+              className="flex-1 h-11 rounded-full px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+              style={{
+                background: "rgba(241,245,249,0.9)",
+                border: "1px solid rgba(147,197,253,0.3)",
+              }}
             />
             <button
               onClick={() => handleSend(inputText)}
               disabled={!inputText.trim() || !!usage?.limitReached || sendMessage.isPending}
-              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white transition-all disabled:opacity-40"
-              style={{ background: "hsl(var(--primary))" }}>
+              className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-white transition-all disabled:opacity-40 btn-3d"
+              style={{ background: "linear-gradient(135deg,hsl(var(--primary)),hsl(200,85%,33%))", boxShadow: "0 4px 16px rgba(14,95,168,0.4)" }}>
               <Send size={16} />
             </button>
           </div>
           {isListening && (
-            <p className="text-center text-xs font-medium mt-2 fade-up" style={{ color: "hsl(var(--primary))" }}>
+            <p className="text-center text-xs font-semibold mt-2 fade-up" style={{ color: "hsl(var(--primary))" }}>
               🎙️ Listening… speak and it will auto-send
             </p>
           )}

@@ -10,6 +10,7 @@ import {
 } from "@/lib/firestoreStranger";
 import { containsProfanity } from "@/lib/profanity";
 import { ArrowLeft, Send, Flag, Timer, UserX, RefreshCw, AlertTriangle } from "lucide-react";
+import { ChatBackground } from "@/components/chat-ui";
 import { Timestamp } from "firebase/firestore";
 
 type Phase = "idle" | "searching" | "matched" | "ended";
@@ -284,12 +285,20 @@ export default function StrangerChat() {
         />
       )}
 
-      <div className="min-h-screen flex flex-col max-w-lg mx-auto" style={{ background: "#f0f4f8" }}>
+      <ChatBackground variant="green" />
+      <div className="min-h-screen flex flex-col max-w-lg mx-auto relative z-10" style={{ background: "transparent" }}>
         {/* Header */}
-        <div className="bg-white border-b border-border px-4 py-3 flex items-center gap-3 shadow-sm shrink-0">
+        <div className="border-b border-white/60 px-4 py-3 flex items-center gap-3 shrink-0 sticky top-0 z-20"
+          style={{
+            background: "rgba(255,255,255,0.87)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            boxShadow: "0 1px 20px rgba(26,158,108,0.08)",
+          }}>
           <button
             onClick={() => { handleEndChat(); setLocation("/home"); }}
-            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted transition-colors"
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-all btn-3d"
+            style={{ background: "rgba(232,248,241,0.9)" }}
           >
             <ArrowLeft size={20} className="text-foreground" />
           </button>
@@ -426,17 +435,22 @@ export default function StrangerChat() {
                     );
                   }
                   return (
-                    <div key={msg.id} className={`flex items-end gap-2 mb-2 ${isMe ? "flex-row-reverse" : ""}`}>
+                    <div key={msg.id} className={`flex items-end gap-2.5 mb-3 ${isMe ? "flex-row-reverse" : ""}`}>
                       {!isMe && (
-                        <div className="w-7 h-7 rounded-full bg-[#e8f8f1] flex items-center justify-center text-sm shrink-0">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0 shadow-md"
+                          style={{ background: "linear-gradient(135deg,#1a9e6c,#15805a)" }}>
                           🌍
                         </div>
                       )}
-                      <div
-                        className={`max-w-[78%] px-3.5 py-2.5 text-sm leading-relaxed shadow-sm ${
-                          isMe ? "bubble-sent bubble-in-right" : "bubble-recv bubble-in-left"
-                        }`}
-                      >
+                      {isMe && (
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-md"
+                          style={{ background: "linear-gradient(135deg,#7c3aed,#5b21b6)" }}>
+                          Me
+                        </div>
+                      )}
+                      <div className={`max-w-[78%] px-3.5 py-2.5 text-sm leading-relaxed ${
+                        isMe ? "bubble-user bubble-in-right" : "bubble-ai bubble-in-left"
+                      }`}>
                         {msg.text}
                       </div>
                     </div>
@@ -446,7 +460,14 @@ export default function StrangerChat() {
               </div>
 
               {/* Input */}
-              <div className="bg-white border-t border-border px-3 py-3 shrink-0 shadow-lg">
+              <div className="px-3 py-3 shrink-0 sticky bottom-0"
+                style={{
+                  background: "rgba(255,255,255,0.88)",
+                  backdropFilter: "blur(20px)",
+                  WebkitBackdropFilter: "blur(20px)",
+                  borderTop: "1px solid rgba(167,243,208,0.35)",
+                  boxShadow: "0 -4px 20px rgba(26,158,108,0.06)",
+                }}>
                 <div className="flex items-center gap-2 mb-2">
                   <input
                     type="text"
@@ -454,20 +475,22 @@ export default function StrangerChat() {
                     onChange={e => setInputText(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                     placeholder="Type a message…"
-                    className="flex-1 h-10 bg-[#f0f4f8] rounded-full px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 border-none"
+                    className="flex-1 h-11 rounded-full px-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                    style={{ background: "rgba(236,253,245,0.9)", border: "1px solid rgba(167,243,208,0.4)" }}
                   />
                   <button
                     onClick={handleSend}
                     disabled={!inputText.trim() || isSending}
-                    className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white transition-all disabled:opacity-40"
-                    style={{ background: "#1a9e6c" }}
+                    className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-white transition-all disabled:opacity-40 btn-3d"
+                    style={{ background: "linear-gradient(135deg,#1a9e6c,#15805a)", boxShadow: "0 4px 16px rgba(26,158,108,0.4)" }}
                   >
                     <Send size={16} />
                   </button>
                 </div>
                 <button
                   onClick={handleEndChat}
-                  className="w-full flex items-center justify-center gap-2 py-2 text-xs text-red-500 font-medium hover:bg-red-50 rounded-lg transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-2 text-xs text-red-500 font-medium rounded-lg transition-all btn-3d"
+                  style={{ background: "rgba(254,242,242,0.6)" }}
                 >
                   <UserX size={14} />
                   End Chat Early
