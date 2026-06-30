@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, Send, BookOpen, RotateCcw } from "lucide-react";
 import { useSendMessage } from "@/lib/api";
 import { logActivity, addTopic, incrementMsgs } from "@/lib/dailyStats";
+import { StreamingText, TypingBubble } from "@/components/chat-ui";
 
 interface Message {
   id: string;
@@ -107,6 +108,7 @@ export default function TeacherPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [streamingId, setStreamingId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -180,10 +182,9 @@ export default function TeacherPage() {
             setIsOnboarding(false);
 
             const cleanReply = reply.replace(/\[ONBOARDING_COMPLETE:[^\]]+\]/, "").trim();
-            setMessages(prev => [
-              ...prev,
-              { id: `a-${Date.now()}`, role: "assistant", content: cleanReply },
-            ]);
+            const aiId = `a-${Date.now()}`;
+            setMessages(prev => [...prev, { id: aiId, role: "assistant", content: cleanReply }]);
+            setStreamingId(aiId);
           } else {
             // Extract homework and topics from AI reply for session logging
             if (!onboarding) {
@@ -193,10 +194,9 @@ export default function TeacherPage() {
               if (topMatch) pendingTopicsRef.current = topMatch[1].trim();
             }
 
-            setMessages(prev => [
-              ...prev,
-              { id: `a-${Date.now()}`, role: "assistant", content: reply },
-            ]);
+            const aiId = `a-${Date.now()}`;
+            setMessages(prev => [...prev, { id: aiId, role: "assistant", content: reply }]);
+            setStreamingId(aiId);
           }
         },
         onError: () => {
@@ -329,41 +329,30 @@ export default function TeacherPage() {
         {messages.map(msg => (
           <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             {msg.role === "assistant" && (
-              <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mr-2 mt-0.5"
+              <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mr-2 mt-0.5 shadow-sm"
                 style={{ background: "linear-gradient(135deg,#0d9488,#0891b2)" }}>
                 <BookOpen size={13} className="text-white" />
               </div>
             )}
             <div
-              className={`max-w-[82%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+              className={`max-w-[82%] px-4 py-3 text-sm leading-relaxed ${
                 msg.role === "user"
-                  ? "text-white rounded-br-sm"
-                  : "text-slate-800 rounded-bl-sm shadow-sm"
-              }`}
-              style={{
-                background: msg.role === "user"
-                  ? "linear-gradient(135deg,#0d9488,#0891b2)"
-                  : "white",
-              }}>
-              {msg.content}
+                  ? "bubble-sent bubble-in-right rounded-br-sm text-white"
+                  : "bubble-recv bubble-in-left rounded-bl-sm text-slate-800"
+              }`}>
+              {msg.role === "assistant" && msg.id === streamingId
+                ? <StreamingText text={msg.content} onDone={() => setStreamingId(null)} />
+                : <span className="whitespace-pre-wrap">{msg.content}</span>}
             </div>
           </div>
         ))}
 
         {isTyping && (
-          <div className="flex justify-start">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mr-2 mt-0.5"
-              style={{ background: "linear-gradient(135deg,#0d9488,#0891b2)" }}>
-              <BookOpen size={13} className="text-white" />
-            </div>
-            <div className="bg-white rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
-              <div className="flex gap-1 items-center h-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-bounce" style={{ animationDelay: "300ms" }} />
-              </div>
-            </div>
-          </div>
+          <TypingBubble
+            avatarContent={<BookOpen size={13} />}
+            avatarBg="linear-gradient(135deg,#0d9488,#0891b2)"
+            dotColor="#2dd4bf"
+          />
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -378,8 +367,8 @@ export default function TeacherPage() {
             onKeyDown={handleKeyDown}
             rows={1}
             placeholder={isOnboarding ? "Jawab yahan likho..." : "Teacher se baat karo..."}
-            className="flex-1 resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 leading-snug"
-            style={{ maxHeight: 120, focusRingColor: "#0d9488" }}
+            className="flex-1 resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 leading-snug"
+            style={{ maxHeight: 120 }}
             disabled={isTyping}
           />
           <button

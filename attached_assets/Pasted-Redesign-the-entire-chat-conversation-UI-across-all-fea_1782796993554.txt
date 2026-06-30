@@ -1,0 +1,33 @@
+Redesign the entire chat/conversation UI across all features (English with Me, Voice Call, Actor Mode, Chat Stranger, AI Teacher) with rich animations and micro-interactions — current UI feels too plain/static.
+1. Message Bubble Animations
+
+Each new message should animate in with a smooth slide-up + fade-in entrance (not just appear instantly)
+AI messages should stream in token-by-token (word-by-word reveal), like ChatGPT/Claude — never show the full block of text instantly
+User's own message bubble should have a subtle "sent" bounce animation when it appears
+Use soft glassmorphism style bubbles (slight blur background, soft shadow, rounded corners) instead of flat plain bubbles
+
+2. Typing/Thinking Indicator
+
+Replace any static "..." with an animated 3-dot pulsing indicator with a natural variable delay (800ms–1500ms) before AI starts responding, to feel human-paced, not instant
+Add a subtle "AI is thinking" shimmer effect on an empty bubble before text starts streaming in
+
+3. Voice Call / Voice Practice Specific
+
+Add a real-time animated waveform/equalizer visualization that reacts to the user's voice while they're speaking (like Siri/Jarvis style)
+While AI is speaking, show a different glowing pulse animation around the AI avatar/icon synced to its voice output
+Mic button should have a breathing/pulse glow animation while actively listening
+
+4. Score & Feedback Animations
+
+When pronunciation/fluency score appears after a sentence, animate the number counting up (0 to final score) instead of just showing the static number
+Mistake highlights should have a brief animated underline/highlight effect drawing attention to the specific word
+
+5. Micro-interactions throughout
+
+Buttons should have subtle press/scale feedback on tap
+Page/section transitions should use smooth slide or fade transitions, not instant cuts
+Small celebratory animation (confetti or pulse) when user completes a session or hits a streak milestone
+
+6. Performance
+
+All animations must stay lightweight (CSS transforms/opacity only, avoid layout-shifting animations) so it stays smooth even on slower devices/connections

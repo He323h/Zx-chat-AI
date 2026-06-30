@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, Send, RefreshCw } from "lucide-react";
 import { useSendMessage } from "@/lib/api";
 import { logActivity, addTopic, incrementMsgs } from "@/lib/dailyStats";
+import { StreamingText, TypingBubble } from "@/components/chat-ui";
 
 interface Message {
   id: string;
@@ -22,6 +23,7 @@ export default function ActorPage() {
   ]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [streamingId, setStreamingId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sendMessage = useSendMessage();
 
@@ -50,17 +52,14 @@ export default function ActorPage() {
       {
         onSuccess: (data) => {
           setIsTyping(false);
-          setMessages(prev => [
-            ...prev,
-            { id: `a-${Date.now()}`, role: "assistant", content: data.message },
-          ]);
+          const aiId = `a-${Date.now()}`;
+          setMessages(prev => [...prev, { id: aiId, role: "assistant", content: data.message }]);
+          setStreamingId(aiId);
         },
         onError: () => {
           setIsTyping(false);
-          setMessages(prev => [
-            ...prev,
-            { id: `e-${Date.now()}`, role: "assistant", content: "Sorry, kuch error hua. Dobara try karo!" },
-          ]);
+          const errId = `e-${Date.now()}`;
+          setMessages(prev => [...prev, { id: errId, role: "assistant", content: "Sorry, kuch error hua. Dobara try karo!" }]);
         },
       }
     );
@@ -119,7 +118,7 @@ export default function ActorPage() {
               </div>
             )}
             <div
-              className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed shadow-sm whitespace-pre-line
+              className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed
                 ${msg.role === "user"
                   ? "bubble-sent bubble-in-right text-white"
                   : "bubble-recv bubble-in-left text-slate-800"
@@ -128,25 +127,19 @@ export default function ActorPage() {
                 ? { fontFamily: "monospace", fontSize: "12.5px", lineHeight: "1.7" }
                 : {}
               }>
-              {msg.content}
+              {msg.role === "assistant" && msg.id === streamingId
+                ? <StreamingText text={msg.content} speed={18} onDone={() => setStreamingId(null)} />
+                : <span className="whitespace-pre-line">{msg.content}</span>}
             </div>
           </div>
         ))}
 
         {isTyping && (
-          <div className="flex items-end gap-2 mb-3">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0 shadow-sm"
-              style={{ background: "linear-gradient(135deg,#ec4899,#db2777)" }}>
-              🎭
-            </div>
-            <div className="bubble-recv px-4 py-3 shadow-sm">
-              <div className="flex items-center gap-1 h-4">
-                <span className="typing-dot w-1.5 h-1.5 rounded-full bg-slate-400" />
-                <span className="typing-dot w-1.5 h-1.5 rounded-full bg-slate-400" />
-                <span className="typing-dot w-1.5 h-1.5 rounded-full bg-slate-400" />
-              </div>
-            </div>
-          </div>
+          <TypingBubble
+            avatarContent="🎭"
+            avatarBg="linear-gradient(135deg,#ec4899,#db2777)"
+            dotColor="#f472b6"
+          />
         )}
 
         <div ref={messagesEndRef} />

@@ -16,6 +16,7 @@ import {
   Mic, MicOff, Send, ArrowLeft, Volume2, VolumeX, Crown,
   Phone, PhoneOff,
 } from "lucide-react";
+import { StreamingText, TypingBubble, Waveform } from "@/components/chat-ui";
 
 import {
   incrementSessions, incrementMsgs, incrementCorrections,
@@ -91,21 +92,6 @@ function hasCorrectionSignal(text: string): boolean {
   return CORRECTION_SIGNALS.some(s => lower.includes(s));
 }
 
-function TypingIndicator() {
-  return (
-    <div className="flex items-end gap-2 mb-3 bubble-in-left">
-      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
-        style={{ background: "hsl(var(--primary))" }}>E</div>
-      <div className="bubble-recv px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-1 h-4">
-          <span className="typing-dot w-1.5 h-1.5 rounded-full bg-[#aaa]" />
-          <span className="typing-dot w-1.5 h-1.5 rounded-full bg-[#aaa]" />
-          <span className="typing-dot w-1.5 h-1.5 rounded-full bg-[#aaa]" />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 type CallPhase = "listening" | "thinking" | "speaking" | "idle";
 
@@ -138,73 +124,92 @@ function CallModeOverlay({ phase, meta, onEndCall }: CallModeOverlayProps) {
 
   const phaseColor =
     phase === "listening" ? "#22c55e" :
-    phase === "speaking"  ? "#3b82f6" :
+    phase === "speaking"  ? "#60a5fa" :
     phase === "thinking"  ? "#f59e0b" :
-    "#94a3b8";
+    "#64748b";
+
+  const waveColor =
+    phase === "listening" ? "#4ade80" :
+    phase === "speaking"  ? "#93c5fd" :
+    "#475569";
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-between"
-      style={{ background: "linear-gradient(180deg,#0a0f1e 0%,#0d1b2e 100%)" }}>
+      style={{ background: "linear-gradient(180deg,#070c1a 0%,#0a1628 60%,#0d1f38 100%)" }}>
 
       {/* Top: name */}
       <div className="w-full px-6 pt-14 text-center">
-        <p className="text-white/50 text-xs font-medium tracking-widest uppercase mb-1">ZX-Chat AI</p>
+        <p className="text-white/40 text-[11px] font-semibold tracking-widest uppercase mb-1">ZX-Chat AI</p>
         <p className="text-white text-xl font-bold">{meta.label}</p>
       </div>
 
-      {/* Center: avatar + timer + phase */}
-      <div className="flex flex-col items-center gap-6">
-        {/* Pulse rings */}
+      {/* Center: avatar + waveform + timer */}
+      <div className="flex flex-col items-center gap-5">
+        {/* Avatar with rings */}
         <div className="relative flex items-center justify-center">
-          {(phase === "speaking" || phase === "listening") && (
+          {phase === "speaking" && (
             <>
-              <div className="absolute w-48 h-48 rounded-full animate-ping opacity-10"
-                style={{ background: phaseColor }} />
-              <div className="absolute w-36 h-36 rounded-full animate-pulse opacity-20"
-                style={{ background: phaseColor }} />
+              <div className="call-ring-1 absolute w-52 h-52 rounded-full"
+                style={{ background: `${phaseColor}18` }} />
+              <div className="call-ring-2 absolute w-40 h-40 rounded-full"
+                style={{ background: `${phaseColor}28` }} />
             </>
           )}
-          <div className="w-28 h-28 rounded-full flex items-center justify-center text-5xl relative z-10 shadow-2xl"
-            style={{ background: "linear-gradient(135deg,#1565c0,#1a8fd1)" }}>
+          {phase === "listening" && (
+            <>
+              <div className="call-ring-1 absolute w-52 h-52 rounded-full"
+                style={{ background: `${phaseColor}22` }} />
+              <div className="call-ring-2 absolute w-38 h-38 rounded-full"
+                style={{ background: `${phaseColor}30` }} />
+            </>
+          )}
+          <div
+            className={`w-28 h-28 rounded-full flex items-center justify-center text-5xl relative z-10 shadow-2xl ${phase !== "idle" && phase !== "thinking" ? "call-avatar" : ""}`}
+            style={{
+              background: "linear-gradient(135deg,#1565c0,#1a8fd1)",
+              boxShadow: phase === "speaking"
+                ? `0 0 0 4px ${phaseColor}40, 0 8px 40px rgba(14,95,168,0.6)`
+                : `0 8px 32px rgba(14,95,168,0.4)`,
+            }}>
             {meta.emoji}
           </div>
         </div>
 
-        {/* Call timer */}
-        <p className="text-white text-5xl font-mono font-light tracking-widest tabular-nums">
-          {timer}
-        </p>
-
-        {/* Phase pill */}
-        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full"
-          style={{ background: `${phaseColor}22`, border: `1px solid ${phaseColor}44` }}>
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: phaseColor }} />
-          <span className="text-sm font-medium" style={{ color: phaseColor }}>{phaseLabel}</span>
+        {/* Waveform visualizer */}
+        <div className="flex flex-col items-center gap-3">
+          <Waveform
+            active={phase === "listening" || phase === "speaking"}
+            color={waveColor}
+            bars={7}
+          />
+          <p className="text-white text-5xl font-mono font-extralight tracking-widest tabular-nums">
+            {timer}
+          </p>
         </div>
 
-        <p className="text-white/30 text-xs text-center px-10 leading-relaxed">
+        {/* Phase pill */}
+        <div className="flex items-center gap-2 px-5 py-2 rounded-full"
+          style={{ background: `${phaseColor}20`, border: `1px solid ${phaseColor}50` }}>
+          <div className="w-2 h-2 rounded-full call-phase-dot" style={{ background: phaseColor }} />
+          <span className="text-sm font-semibold" style={{ color: phaseColor }}>{phaseLabel}</span>
+        </div>
+
+        <p className="text-white/25 text-xs text-center px-10 leading-relaxed">
           {phase === "idle"
-            ? "Tap the mic below to start speaking"
+            ? "AI ki baat suno, phir apni baari hai"
             : "Bolne ke baad ruko — AI automatically sun raha hai"}
         </p>
-
-        {/* Manual mic button when idle */}
-        {phase === "idle" && (
-          <div className="flex flex-col items-center gap-2 mt-2">
-            <p className="text-white/50 text-xs">Press to speak</p>
-          </div>
-        )}
       </div>
 
       {/* End call button */}
       <div className="pb-16 flex flex-col items-center gap-3">
         <button
           onClick={onEndCall}
-          className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
-          style={{ background: "#ef4444" }}>
+          className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-transform"
+          style={{ background: "linear-gradient(135deg,#dc2626,#ef4444)", boxShadow: "0 4px 24px rgba(239,68,68,0.5)" }}>
           <PhoneOff size={28} className="text-white" />
         </button>
-        <span className="text-white/40 text-sm">Call khatam karo</span>
+        <span className="text-white/30 text-xs">Call khatam karo</span>
       </div>
     </div>
   );
@@ -281,6 +286,7 @@ export default function Chat() {
   const [isTyping, setIsTyping] = useState(false);
   const [started, setStarted] = useState(false);
   const [callMode, setCallModeState] = useState(false);
+  const [streamingId, setStreamingId] = useState<string | null>(null);
 
   // Mic permission gate
   const [showMicPerm, setShowMicPerm]     = useState(false);
@@ -351,6 +357,7 @@ export default function Chat() {
             setIsTyping(false);
             const aiMsg: Message = { id: `a-${Date.now()}`, role: "assistant", content: data.message };
             setMessages(prev => [...prev, aiMsg]);
+            setStreamingId(aiMsg.id);
 
             if (hasCorrectionSignal(data.message)) incrementCorrections();
 
@@ -557,18 +564,25 @@ export default function Chat() {
           {messages.map(msg => (
             <div key={msg.id} className={`flex items-end gap-2 mb-2 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
               {msg.role === "assistant" && (
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm"
                   style={{ background: "hsl(var(--primary))" }}>E</div>
               )}
               <div className="max-w-[78%]">
-                <div className={`px-3.5 py-2.5 text-sm leading-relaxed shadow-sm
+                <div className={`px-3.5 py-2.5 text-sm leading-relaxed
                   ${msg.role === "user" ? "bubble-sent bubble-in-right" : "bubble-recv bubble-in-left"}`}>
-                  {msg.content}
+                  {msg.role === "assistant" && msg.id === streamingId
+                    ? <StreamingText text={msg.content} onDone={() => setStreamingId(null)} />
+                    : msg.content}
                 </div>
               </div>
             </div>
           ))}
-          {isTyping && <TypingIndicator />}
+          {isTyping && (
+            <TypingBubble
+              avatarContent="E"
+              avatarBg="hsl(var(--primary))"
+            />
+          )}
           <div ref={messagesEndRef} />
         </div>
 
@@ -577,8 +591,8 @@ export default function Chat() {
           <div className="flex items-center gap-2">
             {isSupported && (
               <button onClick={handleMicClick} disabled={!!usage?.limitReached}
-                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all
-                  ${isListening ? "text-white mic-pulsing" : "bg-[#f0f4f8] text-muted-foreground hover:bg-[#e0e8f0]"}
+                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-90
+                  ${isListening ? "text-white mic-breathe" : "bg-[#f0f4f8] text-muted-foreground hover:bg-[#e0e8f0]"}
                   ${usage?.limitReached ? "opacity-40 cursor-not-allowed" : ""}`}
                 style={isListening ? { background: "hsl(var(--primary))" } : {}}>
                 {isListening ? <Mic size={18} /> : <MicOff size={18} />}
