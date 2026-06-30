@@ -1,4 +1,4 @@
-const CACHE_NAME = "zx-chat-v1";
+const CACHE_NAME = "englifly-v2";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
