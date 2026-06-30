@@ -217,6 +217,7 @@ export interface QuizDayState {
   correctCount: number;
   wrongCount: number;
   answers: Record<number, "correct" | "wrong">;
+  selections: Record<number, number>;
 }
 
 const QUIZ_STATE_KEY = "ef_quiz_state_v1";
@@ -228,14 +229,14 @@ function todayStr(): string {
 export function getQuizState(): QuizDayState {
   try {
     const raw = localStorage.getItem(QUIZ_STATE_KEY);
-    if (!raw) return { date: todayStr(), correctCount: 0, wrongCount: 0, answers: {} };
+    if (!raw) return { date: todayStr(), correctCount: 0, wrongCount: 0, answers: {}, selections: {} };
     const parsed: QuizDayState = JSON.parse(raw);
     if (parsed.date !== todayStr()) {
-      return { date: todayStr(), correctCount: 0, wrongCount: 0, answers: {} };
+      return { date: todayStr(), correctCount: 0, wrongCount: 0, answers: {}, selections: {} };
     }
-    return parsed;
+    return { ...parsed, selections: parsed.selections ?? {} };
   } catch {
-    return { date: todayStr(), correctCount: 0, wrongCount: 0, answers: {} };
+    return { date: todayStr(), correctCount: 0, wrongCount: 0, answers: {}, selections: {} };
   }
 }
 

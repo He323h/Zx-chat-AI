@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { ArrowLeft, ChevronRight, RotateCcw, Zap } from "lucide-react";
+import { recordAnswer, logActivity } from "@/lib/dailyStats";
 
 const WORD_ARRANGE_KEY = "ef_word_arrange_v1";
 const REQUIRED_TO_ADVANCE = 5;
@@ -95,6 +96,22 @@ function getSentenceForLevel(level: number, seenIdx: number): string {
 
 type ResultState = "correct" | "wrong" | null;
 
+function playTapSound(kind: "tap" | "success" | "error") {
+  const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!Ctx) return;
+  const ctx = new Ctx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type = kind === "tap" ? "triangle" : "sine";
+  osc.frequency.setValueAtTime(kind === "error" ? 180 : kind === "success" ? 720 : 430, ctx.currentTime);
+  if (kind === "success") osc.frequency.exponentialRampToValueAtTime(1040, ctx.currentTime + 0.16);
+  gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(kind === "tap" ? 0.035 : 0.065, ctx.currentTime + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
+  osc.start(); osc.stop(ctx.currentTime + 0.22);
+}
+
 export default function GrammarPage() {
   const [, setLocation] = useLocation();
   const [progress, setProgress] = useState<WordArrangeProgress>(getProgress);
@@ -120,6 +137,7 @@ export default function GrammarPage() {
 
   function addWord(wordIdx: number) {
     if (result !== null) return;
+    playTapSound("tap");
     const word = tiles[wordIdx];
     setBuilt(prev => [...prev, word]);
     setTiles(prev => prev.filter((_, i) => i !== wordIdx));
@@ -127,6 +145,7 @@ export default function GrammarPage() {
 
   function removeWord(builtIdx: number) {
     if (result !== null) return;
+    playTapSound("tap");
     const word = built[builtIdx];
     setBuilt(prev => prev.filter((_, i) => i !== builtIdx));
     setTiles(prev => [...prev, word]);
@@ -135,6 +154,9 @@ export default function GrammarPage() {
   function checkAnswer() {
     if (built.length === 0 || result !== null) return;
     const isCorrect = built.join(" ") === currentSentence;
+    playTapSound(isCorrect ? "success" : "error");
+    recordAnswer(isCorrect);
+    logActivity("practice", `Word Arrange — ${isCorrect ? "correct" : "retry"}`);
     setResult(isCorrect ? "correct" : "wrong");
   }
 
@@ -239,7 +261,7 @@ export default function GrammarPage() {
 
         {/* Sentence building area */}
         <div
-          className="min-h-[80px] rounded-2xl p-3 flex flex-wrap gap-2 items-start content-start"
+          className={`min-h-[96px] rounded-3xl p-4 flex flex-wrap gap-2 items-start content-start sentence-box-3d ${result === "correct" ? "sentence-success-glow" : result === "wrong" ? "sentence-shake" : ""}`}
           style={{
             background: "white",
             border: result === "correct" ? "2px solid #22c55e" : result === "wrong" ? "2px solid #ef4444" : "2px dashed #cbd5e1",
@@ -253,7 +275,7 @@ export default function GrammarPage() {
                 key={`b-${i}-${word}`}
                 onClick={() => removeWord(i)}
                 disabled={result !== null}
-                className="px-3 py-1.5 rounded-xl text-sm font-semibold transition-all active:scale-95"
+                className="word-tile-3d placed-word px-3 py-1.5 rounded-xl text-sm font-semibold transition-all"
                 style={{
                   background: result === "correct" ? "rgba(34,197,94,0.15)" : result === "wrong" ? "rgba(239,68,68,0.1)" : "rgba(14,95,168,0.1)",
                   color: result === "correct" ? "#15803d" : result === "wrong" ? "#dc2626" : "#0e5fa8",
@@ -300,11 +322,11 @@ export default function GrammarPage() {
                 key={`t-${i}-${word}`}
                 onClick={() => addWord(i)}
                 disabled={result !== null}
-                className="px-3 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95 shadow-sm"
+                className="word-tile-3d px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
                 style={{
-                  background: "white",
+                  background: "linear-gradient(180deg,#ffffff,#eef6ff)",
                   color: "#1e293b",
-                  border: "1.5px solid #e2e8f0",
+                  border: "1.5px solid rgba(148,163,184,0.45)",
                   cursor: result !== null ? "default" : "pointer",
                   opacity: result !== null ? 0.5 : 1,
                 }}
@@ -354,4 +376,3 @@ export default function GrammarPage() {
     </div>
   );
 }
-

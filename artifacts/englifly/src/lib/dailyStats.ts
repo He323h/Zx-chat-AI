@@ -3,7 +3,7 @@ const HISTORY_KEY = "ef_weekly_history";
 
 export interface ActivityEntry {
   time: string;
-  type: "chat" | "voice" | "vocab" | "actor";
+  type: "chat" | "voice" | "vocab" | "actor" | "quiz" | "practice" | "roadmap";
   topic: string;
 }
 
@@ -16,6 +16,8 @@ export interface DailyStats {
   voiceSessions: number;
   minutesPracticed: number;
   topics: string[];
+  correctAnswers: number;
+  totalAnswers: number;
   activity: ActivityEntry[];
   sessionStartMs: number;
 }
@@ -41,6 +43,8 @@ function blank(): DailyStats {
     voiceSessions: 0,
     minutesPracticed: 0,
     topics: [],
+    correctAnswers: 0,
+    totalAnswers: 0,
     activity: [],
     sessionStartMs: Date.now(),
   };
@@ -52,7 +56,7 @@ function load(): DailyStats {
     if (!raw) return blank();
     const parsed: DailyStats = JSON.parse(raw);
     if (parsed.date !== todayStr()) return blank();
-    return parsed;
+    return { ...blank(), ...parsed };
   } catch {
     return blank();
   }
@@ -83,13 +87,29 @@ function saveToHistory(stats: DailyStats): void {
 }
 
 export function getStats(): DailyStats {
-  return load();
+  const s = load();
+  if (s.sessionStartMs) {
+    const elapsed = Math.floor((Date.now() - s.sessionStartMs) / 60000);
+    if (elapsed > s.minutesPracticed) {
+      s.minutesPracticed = elapsed;
+      save(s);
+    }
+  }
+  return s;
 }
 
 export function getAccuracy(): number | null {
   const s = load();
+  if (s.totalAnswers > 0) return Math.round((s.correctAnswers / s.totalAnswers) * 100);
   if (s.msgs === 0) return null;
   return Math.max(0, Math.round(100 - (s.corrections / s.msgs) * 100));
+}
+
+export function recordAnswer(isCorrect: boolean): void {
+  const s = load();
+  s.totalAnswers += 1;
+  if (isCorrect) s.correctAnswers += 1;
+  save(s);
 }
 
 export function incrementSessions(): void {
