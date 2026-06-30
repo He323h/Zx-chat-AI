@@ -60,7 +60,8 @@ function SplashScreen() {
           position: "relative",
           zIndex: 1,
           filter: "drop-shadow(0 8px 24px rgba(0,0,0,0.18))",
-          animation: "scale-in 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards",
+          // No animation — must match the static HTML splash exactly so
+          // the fade-handoff from index.html → React is invisible to the user.
         }}
       />
     </div>
