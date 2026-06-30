@@ -1,0 +1,76 @@
+Mujhe apne poore app ka UI redesign karna hai "Claymorphism" design style me — 
+jisme cards aur elements soft, puffy, 3D-clay jaisa dikhte hain (jaise dough/clay 
+se bane ho), saath me professional aur consistent blue theme. Neeche diya gaya 
+design system strictly follow karo har screen, har component pe.
+
+=== DESIGN STYLE: CLAYMORPHISM ===
+Har card/button/icon container me ye "clay effect" hona chahiye:
+- Double shadow effect: ek HALKA shadow upar-left (light source jaisa) aur ek 
+  DARKER shadow neeche-right (depth ke liye)
+  Example CSS: box-shadow: -6px -6px 12px rgba(255,255,255,0.7), 
+                            6px 6px 16px rgba(28,176,246,0.25);
+- Border-radius BAHUT zyada rounded (24-32px) — sharp corners bilkul nahi
+- Background thoda gradient ya solid pastel color (flat flat nahi, halka depth wala)
+- Elements "uthe hue" (raised/embossed) lagne chahiye, jaise screen se bahar 
+  ubhar rahe ho — flat design nahi
+
+=== COLOR PALETTE (Blue-based Claymorphism) ===
+- Primary Blue (clay base): #1CB0F6
+- Primary Light Blue (highlight/shine): #6FD3FF
+- Primary Dark Blue (shadow/depth): #0E8FD4
+- Background: #EAF4FF (very light soft blue-white — clay base background)
+- Card Background: #FFFFFF ya halka gradient (#FFFFFF → #F0F8FF)
+- Success Green (clay style): #58CC02 with same double-shadow technique
+- Accent Orange (streak/highlights): #FF9600
+- Text Primary: #1A2B3C
+- Text Secondary: #6B7785
+
+RULE: Har header blue gradient (#1CB0F6 → #0E8FD4) me hoga, claymorphism shadow 
+effect ke saath niche curve karta hua. Koi alag color ka full header kahin nahi.
+
+=== CLAY CARD STYLE (sabse important) ===
+- Border-radius: 28px (bahut rounded, soft pillow jaisa)
+- Padding: 20px
+- Background: white ya light pastel
+- Shadow: dono taraf se — light shadow upar-left (white/light blue), 
+  dark shadow neeche-right (blue tinted, halka blur zyada)
+- Hover/press state: shadow thoda andar dabne jaisa (inset shadow) — 
+  jaise clay ko dabaya ja raha ho
+
+=== ICONS & BUTTONS ===
+- Icon containers: round ya squircle, same clay shadow effect, 3D-pop jaisa lage
+- Buttons: bulgy/raised look, jab press karo to thoda "dab" jaye (inset shadow), 
+  bilkul flat button nahi — har button clay ka bana hua feel de
+- Icons khud 3D-illustration style ke ho sake to best hai (jaise screenshot me 
+  rocket/calendar icons the) — flat line icons ke bajaye thoda dimensional/cute style
+
+=== SPACING SYSTEM ===
+- Screen padding: 16-20px
+- Gap between cards: 16px (clay cards ko thoda zyada breathing space chahiye 
+  unki puffy nature ki wajah se)
+- Gap between sections: 28px
+
+=== TYPOGRAPHY ===
+- Page Title: 22px Bold
+- Section Heading: 18px Semi-Bold  
+- Card Title: 16px Semi-Bold
+- Body Text: 14px Regular
+- Font: Poppins ya Inter — rounded, friendly font (claymorphism ke saath match karta hai)
+
+=== LAYOUT RULES ===
+1. Consistent bottom navigation honi chahiye, usme bhi clay-style icons (raised, 
+   active tab thoda zyada "popped out" dikhna chahiye)
+2. Progress bars bhi clay style me — track thoda dabela (inset), filled portion 
+   raised/glossy
+3. Empty states me cute 3D illustration daalo (jaise rocket/character), plain 
+   text/icon nahi
+4. Ads ko bhi clay card jaisa hi style do — round corners, soft shadow, 
+   app ka hi part lage
+
+Reference style: Soft UI / Claymorphism jaisa Dribbble pe trending hai — 
+puffy 3D cards with dual soft shadows, bright blue color scheme, friendly 
+rounded everything.
+
+Ab is design system ke according mera poora app redesign karo — saari screens 
+(Home, Streak Badges, Tense Learning Path, Word Arrange, Chat) consistent 
+claymorphism blue theme me banao.

@@ -374,4 +374,140 @@
     50%     { box-shadow: 0 0 0 8px rgba(34,197,94,0.35); }
   }
   .quiz-next-glow { animation: quiz-next-glow 0.9s ease-in-out infinite; }
+
+  /* ══════════════════════════════════════════════
+     CLAYMORPHISM DESIGN SYSTEM
+  ══════════════════════════════════════════════ */
+
+  /* ─── Page background ─── */
+  .clay-page { background: #EAF4FF; min-height: 100vh; }
+
+  /* ─── Card: white puffy clay ─── */
+  .clay-card {
+    background: #ffffff;
+    border-radius: 28px;
+    box-shadow: -4px -4px 10px rgba(255,255,255,0.9), 6px 6px 18px rgba(28,176,246,0.22);
+  }
+  .clay-card-sm {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: -2px -2px 6px rgba(255,255,255,0.9), 3px 3px 10px rgba(28,176,246,0.18);
+  }
+
+  /* ─── Inset (sunken clay / pressed) ─── */
+  .clay-inset {
+    box-shadow: inset 2px 2px 8px rgba(28,176,246,0.16), inset -2px -2px 6px rgba(255,255,255,0.85);
+  }
+
+  /* ─── Header: blue gradient curved ─── */
+  .clay-header {
+    background: linear-gradient(135deg, #1CB0F6, #0E8FD4);
+    border-radius: 0 0 32px 32px;
+    box-shadow: 0 8px 24px rgba(28,176,246,0.38);
+  }
+
+  /* ─── Primary clay button (blue) ─── */
+  .clay-btn {
+    background: linear-gradient(135deg, #1CB0F6, #0E8FD4);
+    border-radius: 20px;
+    box-shadow: -3px -3px 8px rgba(255,255,255,0.55), 4px 4px 12px rgba(14,143,212,0.42);
+    color: #ffffff;
+    font-weight: 700;
+    transition: box-shadow 0.12s ease, transform 0.1s ease;
+  }
+  .clay-btn:active {
+    box-shadow: inset 2px 2px 8px rgba(0,0,0,0.18), inset -1px -1px 4px rgba(255,255,255,0.25);
+    transform: scale(0.97);
+  }
+
+  /* ─── White clay button ─── */
+  .clay-btn-white {
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: -2px -2px 6px rgba(255,255,255,0.9), 3px 3px 10px rgba(28,176,246,0.2);
+    color: #1A2B3C;
+    font-weight: 600;
+    transition: box-shadow 0.12s ease, transform 0.1s ease;
+  }
+  .clay-btn-white:active {
+    box-shadow: inset 2px 2px 6px rgba(28,176,246,0.15), inset -1px -1px 4px rgba(255,255,255,0.9);
+    transform: scale(0.97);
+  }
+
+  /* ─── Green clay button ─── */
+  .clay-btn-green {
+    background: linear-gradient(135deg, #58CC02, #43a800);
+    border-radius: 20px;
+    box-shadow: -3px -3px 8px rgba(255,255,255,0.5), 4px 4px 12px rgba(88,204,2,0.38);
+    color: #ffffff;
+    font-weight: 700;
+    transition: box-shadow 0.12s ease, transform 0.1s ease;
+  }
+  .clay-btn-green:active {
+    box-shadow: inset 2px 2px 8px rgba(0,0,0,0.15);
+    transform: scale(0.97);
+  }
+
+  /* ─── Clay icon container ─── */
+  .clay-icon {
+    box-shadow: -2px -2px 5px rgba(255,255,255,0.7), 3px 3px 8px rgba(28,176,246,0.25);
+    border-radius: 18px;
+  }
+
+  /* ─── Clay pill (stat/tag) ─── */
+  .clay-pill {
+    background: rgba(255,255,255,0.28);
+    border-radius: 14px;
+    backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+
+  /* ─── Progress bar track (clay inset) ─── */
+  .clay-track {
+    background: #D4ECFF;
+    border-radius: 99px;
+    box-shadow: inset 1px 1px 4px rgba(28,176,246,0.18), inset -1px -1px 3px rgba(255,255,255,0.85);
+  }
+
+  /* ─── Progress bar fill (raised) ─── */
+  .clay-fill {
+    background: linear-gradient(90deg, #1CB0F6, #6FD3FF);
+    border-radius: 99px;
+    box-shadow: 0 2px 8px rgba(28,176,246,0.45);
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ─── Bottom nav container ─── */
+  .clay-nav {
+    background: #ffffff;
+    border-radius: 28px 28px 0 0;
+    box-shadow: -4px -4px 12px rgba(255,255,255,0.9), 0 -6px 20px rgba(28,176,246,0.18);
+  }
+
+  /* ─── Tile 3D (word arrange) ─── */
+  .clay-tile {
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: -2px -2px 5px rgba(255,255,255,0.9), 0 4px 0 #C4DCEF, 3px 5px 10px rgba(28,176,246,0.18);
+    transition: box-shadow 0.1s ease, transform 0.1s ease;
+  }
+  .clay-tile:active {
+    box-shadow: inset 2px 2px 5px rgba(28,176,246,0.18), inset -1px -1px 3px rgba(255,255,255,0.9), 0 1px 0 #C4DCEF;
+    transform: translateY(3px);
+  }
+
+  /* ─── Sentence builder box (clay inset zone) ─── */
+  .clay-builder {
+    background: #EAF4FF;
+    border-radius: 20px;
+    box-shadow: inset 3px 3px 8px rgba(28,176,246,0.14), inset -3px -3px 8px rgba(255,255,255,0.85);
+  }
+
+  /* ─── Nav tab item pop-up on active ─── */
+  @keyframes nav-tab-pop {
+    0%   { transform: scale(1) translateY(0); }
+    50%  { transform: scale(1.15) translateY(-4px); }
+    100% { transform: scale(1.05) translateY(-2px); }
+  }
+  .clay-nav-active { animation: nav-tab-pop 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards; }
 }
