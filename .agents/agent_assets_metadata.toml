@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "pSo__54cAeMpmsxI8WupB"
+uri = "file://englifly-twa-update.zip"
+type = "unspecified"
+title = "EngliFly TWA Update Package (Icons + Manifest)"
