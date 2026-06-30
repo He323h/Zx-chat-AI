@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, ChevronRight, RotateCcw, Zap } from "lucide-react";
+import { ArrowLeft, RotateCcw, Zap } from "lucide-react";
+import { playClickSound, playCorrectSound, playWrongSound } from "@/lib/sounds";
 
 const WORD_ARRANGE_KEY = "ef_word_arrange_v1";
 const REQUIRED_TO_ADVANCE = 5;
@@ -104,6 +105,9 @@ export default function GrammarPage() {
   const [built, setBuilt] = useState<string[]>([]);
   const [result, setResult] = useState<ResultState>(null);
   const [justLeveled, setJustLeveled] = useState(false);
+  const [shaking, setShaking] = useState(false);
+  const [glowing, setGlowing] = useState(false);
+  const [newTileIdx, setNewTileIdx] = useState<number | null>(null);
 
   const loadSentence = useCallback((level: number, idx: number) => {
     const sentence = getSentenceForLevel(level, idx);
@@ -111,15 +115,19 @@ export default function GrammarPage() {
     setTiles(shuffleWords(sentence));
     setBuilt([]);
     setResult(null);
+    setShaking(false);
+    setGlowing(false);
   }, []);
 
   useEffect(() => {
     loadSentence(progress.level, sentenceIdx);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function addWord(wordIdx: number) {
     if (result !== null) return;
+    playClickSound();
+    setNewTileIdx(built.length);
+    setTimeout(() => setNewTileIdx(null), 300);
     const word = tiles[wordIdx];
     setBuilt(prev => [...prev, word]);
     setTiles(prev => prev.filter((_, i) => i !== wordIdx));
@@ -127,6 +135,7 @@ export default function GrammarPage() {
 
   function removeWord(builtIdx: number) {
     if (result !== null) return;
+    playClickSound();
     const word = built[builtIdx];
     setBuilt(prev => prev.filter((_, i) => i !== builtIdx));
     setTiles(prev => [...prev, word]);
@@ -136,6 +145,14 @@ export default function GrammarPage() {
     if (built.length === 0 || result !== null) return;
     const isCorrect = built.join(" ") === currentSentence;
     setResult(isCorrect ? "correct" : "wrong");
+    if (isCorrect) {
+      playCorrectSound();
+      setGlowing(true);
+    } else {
+      playWrongSound();
+      setShaking(true);
+      setTimeout(() => setShaking(false), 600);
+    }
   }
 
   function handleNext() {
@@ -166,6 +183,8 @@ export default function GrammarPage() {
     setBuilt([]);
     setTiles(shuffleWords(currentSentence));
     setResult(null);
+    setShaking(false);
+    setGlowing(false);
   }
 
   const allPlaced = tiles.length === 0;
@@ -176,25 +195,21 @@ export default function GrammarPage() {
       {justLeveled && (
         <div
           className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-xl flex items-center gap-2"
-          style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", maxWidth: "90vw" }}
-        >
+          style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", maxWidth: "90vw" }}>
           <Zap size={16} />
           Level Up! You're now on Level {progress.level} 🎉
         </div>
       )}
 
-      {/* Header */}
       <div className="bg-white border-b border-border px-4 py-3 flex items-center gap-3 shadow-sm shrink-0">
         <button
           onClick={() => setLocation("/home")}
-          className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#f0f4f8] transition-colors"
-        >
+          className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#f0f4f8] transition-colors">
           <ArrowLeft size={20} className="text-foreground" />
         </button>
         <div
           className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold shrink-0"
-          style={{ background: "linear-gradient(135deg,#0e5fa8,#1a8fd1)" }}
-        >
+          style={{ background: "linear-gradient(135deg,#0e5fa8,#1a8fd1)" }}>
           <span className="text-base">🧩</span>
         </div>
         <div className="flex-1">
@@ -203,13 +218,11 @@ export default function GrammarPage() {
         </div>
         <div
           className="text-[11px] font-bold px-2.5 py-1 rounded-full text-white"
-          style={{ background: "linear-gradient(135deg,#0e5fa8,#1a8fd1)" }}
-        >
+          style={{ background: "linear-gradient(135deg,#0e5fa8,#1a8fd1)" }}>
           Lv.{progress.level}
         </div>
       </div>
 
-      {/* Level progress bar */}
       <div className="bg-white px-4 py-2.5 border-b border-slate-100 shrink-0">
         <div className="flex items-center justify-between mb-1.5">
           <p className="text-[11px] text-slate-500 font-semibold">
@@ -227,8 +240,7 @@ export default function GrammarPage() {
             style={{
               width: `${(Math.min(progress.correctInLevel, REQUIRED_TO_ADVANCE) / REQUIRED_TO_ADVANCE) * 100}%`,
               background: "linear-gradient(90deg,#0e5fa8,#1a8fd1)",
-            }}
-          />
+            }} />
         </div>
       </div>
 
@@ -237,14 +249,19 @@ export default function GrammarPage() {
           Tap the words in the correct order to build the sentence 👇
         </p>
 
-        {/* Sentence building area */}
         <div
-          className="min-h-[80px] rounded-2xl p-3 flex flex-wrap gap-2 items-start content-start"
+          className={`min-h-[80px] rounded-2xl p-3 flex flex-wrap gap-2 items-start content-start transition-all duration-300 ${shaking ? "word-shake" : ""} ${glowing ? "word-glow-correct" : ""}`}
           style={{
             background: "white",
-            border: result === "correct" ? "2px solid #22c55e" : result === "wrong" ? "2px solid #ef4444" : "2px dashed #cbd5e1",
-          }}
-        >
+            border: result === "correct"
+              ? "2px solid #22c55e"
+              : result === "wrong"
+              ? "2px solid #ef4444"
+              : "2px dashed #cbd5e1",
+            boxShadow: glowing
+              ? "0 0 0 4px rgba(34,197,94,0.25), 0 4px 24px rgba(34,197,94,0.2)"
+              : "none",
+          }}>
           {built.length === 0 ? (
             <p className="text-slate-300 text-sm w-full text-center py-4 select-none">Tap words below to start...</p>
           ) : (
@@ -253,21 +270,28 @@ export default function GrammarPage() {
                 key={`b-${i}-${word}`}
                 onClick={() => removeWord(i)}
                 disabled={result !== null}
-                className="px-3 py-1.5 rounded-xl text-sm font-semibold transition-all active:scale-95"
+                className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all active:scale-90 ${i === newTileIdx ? "tile-enter" : ""}`}
                 style={{
-                  background: result === "correct" ? "rgba(34,197,94,0.15)" : result === "wrong" ? "rgba(239,68,68,0.1)" : "rgba(14,95,168,0.1)",
+                  background: result === "correct"
+                    ? "rgba(34,197,94,0.15)"
+                    : result === "wrong"
+                    ? "rgba(239,68,68,0.1)"
+                    : "rgba(14,95,168,0.1)",
                   color: result === "correct" ? "#15803d" : result === "wrong" ? "#dc2626" : "#0e5fa8",
-                  border: result === "correct" ? "1.5px solid #22c55e" : result === "wrong" ? "1.5px solid #ef4444" : "1.5px solid rgba(14,95,168,0.3)",
+                  border: result === "correct"
+                    ? "1.5px solid #22c55e"
+                    : result === "wrong"
+                    ? "1.5px solid #ef4444"
+                    : "1.5px solid rgba(14,95,168,0.3)",
                   cursor: result !== null ? "default" : "pointer",
-                }}
-              >
+                  boxShadow: result === null ? "0 2px 6px rgba(14,95,168,0.15)" : "none",
+                }}>
                 {word}
               </button>
             ))
           )}
         </div>
 
-        {/* Result feedback */}
         {result === "correct" && (
           <div className="rounded-2xl px-4 py-3 flex items-center gap-3"
             style={{ background: "rgba(34,197,94,0.1)", border: "1.5px solid #22c55e" }}>
@@ -291,24 +315,25 @@ export default function GrammarPage() {
           </div>
         )}
 
-        {/* Word tile pool */}
         <div>
-          <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide mb-2">Word Tiles</p>
+          <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wide mb-2.5">Word Tiles</p>
           <div className="flex flex-wrap gap-2">
             {tiles.map((word, i) => (
               <button
                 key={`t-${i}-${word}`}
                 onClick={() => addWord(i)}
                 disabled={result !== null}
-                className="px-3 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95 shadow-sm"
+                className="px-3 py-2 rounded-xl text-sm font-semibold transition-all tile-3d"
                 style={{
                   background: "white",
                   color: "#1e293b",
                   border: "1.5px solid #e2e8f0",
                   cursor: result !== null ? "default" : "pointer",
-                  opacity: result !== null ? 0.5 : 1,
-                }}
-              >
+                  opacity: result !== null ? 0.45 : 1,
+                  boxShadow: result !== null
+                    ? "none"
+                    : "0 3px 0 #c5cfe6, 0 4px 8px rgba(0,0,0,0.12)",
+                }}>
                 {word}
               </button>
             ))}
@@ -318,15 +343,13 @@ export default function GrammarPage() {
           </div>
         </div>
 
-        {/* Action buttons */}
         <div className="flex gap-3 pb-4">
           {result === null ? (
             <>
               <button
                 onClick={handleReset}
                 className="flex items-center gap-1.5 px-4 py-3 rounded-xl text-sm font-semibold transition-all active:scale-95"
-                style={{ background: "white", color: "#64748b", border: "1.5px solid #e2e8f0", flex: 1 }}
-              >
+                style={{ background: "white", color: "#64748b", border: "1.5px solid #e2e8f0", flex: 1 }}>
                 <RotateCcw size={14} />
                 Reset
               </button>
@@ -334,8 +357,7 @@ export default function GrammarPage() {
                 onClick={checkAnswer}
                 disabled={!allPlaced || built.length === 0}
                 className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-40"
-                style={{ background: "linear-gradient(135deg,#0e5fa8,#1a8fd1)", flex: 2 }}
-              >
+                style={{ background: "linear-gradient(135deg,#0e5fa8,#1a8fd1)", flex: 2, boxShadow: "0 4px 16px rgba(14,95,168,0.35)" }}>
                 Check Answer ✓
               </button>
             </>
@@ -343,10 +365,11 @@ export default function GrammarPage() {
             <button
               onClick={handleNext}
               className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95"
-              style={{ background: result === "correct" ? "linear-gradient(135deg,#22c55e,#16a34a)" : "linear-gradient(135deg,#0e5fa8,#1a8fd1)" }}
-            >
-              Next Sentence
-              <ChevronRight size={16} />
+              style={{
+                background: result === "correct" ? "linear-gradient(135deg,#22c55e,#16a34a)" : "linear-gradient(135deg,#0e5fa8,#1a8fd1)",
+                boxShadow: result === "correct" ? "0 4px 16px rgba(34,197,94,0.35)" : "0 4px 16px rgba(14,95,168,0.35)",
+              }}>
+              Next Sentence →
             </button>
           )}
         </div>
@@ -354,4 +377,3 @@ export default function GrammarPage() {
     </div>
   );
 }
-

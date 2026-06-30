@@ -99,7 +99,7 @@ export default function Home() {
         <div className="flex gap-2 mt-2 pb-2">
           <StatPill icon="⏱️" value={stats.minutesPracticed > 0 ? `${stats.minutesPracticed}m` : "0m"} label="Practice" />
           <StatPill icon="🎙️" value={String(stats.voiceSessions)} label="Voice" />
-          <StatPill icon="🔥" value={String(stats.topics.length)} label="Topics" />
+          <StatPill icon="📚" value={`${completedTopics}/${roadmapTopics.length}`} label="Tenses" />
         </div>
       </div>
 
