@@ -1,243 +1,56 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, Lock, CheckCircle } from "lucide-react";
-import {
-  getTopicsWithStatus, completeTopic,
-  type TopicStatus, type RoadmapTopic,
-} from "@/lib/roadmapData";
+import { ArrowLeft, Lock, CheckCircle, BookOpen } from "lucide-react";
+import { getTopicsWithStatus, completeTopic, type TopicStatus, type RoadmapTopic } from "@/lib/roadmapData";
+import { addTopic, recordAnswer, logActivity } from "@/lib/dailyStats";
 
 type TopicWithStatus = RoadmapTopic & { status: TopicStatus };
-
-function TopicNode({
-  topic,
-  index,
-  onComplete,
-}: {
-  topic: TopicWithStatus;
-  index: number;
-  onComplete: (id: string) => void;
-}) {
-  const isLeft = index % 2 === 0;
-  const isCompleted = topic.status === "completed";
-  const isCurrent = topic.status === "current";
-  const isLocked = topic.status === "locked";
-
-  let bg = "white";
-  let border = "2px solid #e2e8f0";
-  let shadow = "0 2px 8px rgba(0,0,0,0.06)";
-  let glow = "";
-
-  if (isCompleted) {
-    bg = "linear-gradient(135deg,#22c55e,#16a34a)";
-    border = "2px solid #16a34a";
-  } else if (isCurrent) {
-    bg = "linear-gradient(135deg,#0e5fa8,#1a8fd1)";
-    border = "2px solid #1a8fd1";
-    glow = "0 0 0 4px rgba(26,143,209,0.2), 0 4px 16px rgba(14,95,168,0.3)";
-    shadow = glow;
-  } else {
-    bg = "#f8fafc";
-    border = "2px dashed #cbd5e1";
-  }
-
-  return (
-    <div
-      className={`flex ${isLeft ? "justify-start" : "justify-end"} w-full`}
-    >
-      <button
-        disabled={isLocked}
-        onClick={() => !isLocked && onComplete(topic.id)}
-        className="relative flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 active:scale-[0.97] text-left"
-        style={{
-          background: bg,
-          border,
-          boxShadow: shadow,
-          width: "calc(50% + 24px)",
-          opacity: isLocked ? 0.6 : 1,
-          cursor: isLocked ? "default" : "pointer",
-        }}
-      >
-        {/* Number badge */}
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-black shrink-0"
-          style={{
-            background: isCompleted ? "rgba(255,255,255,0.3)"
-              : isCurrent ? "rgba(255,255,255,0.25)"
-              : "rgba(0,0,0,0.06)",
-            color: (isCompleted || isCurrent) ? "#fff" : "#94a3b8",
-          }}
-        >
-          {isCompleted ? <CheckCircle size={16} className="text-white" /> : isLocked ? <Lock size={13} className="text-slate-400" /> : index + 1}
-        </div>
-
-        {/* Emoji + title */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="text-xl shrink-0">{topic.emoji}</span>
-          <div className="min-w-0">
-            <p
-              className="font-bold text-[13px] leading-tight truncate"
-              style={{ color: (isCompleted || isCurrent) ? "#fff" : "#1e293b" }}
-            >
-              {topic.title}
-            </p>
-            <p
-              className="text-[10px] leading-tight truncate mt-0.5"
-              style={{ color: (isCompleted || isCurrent) ? "rgba(255,255,255,0.7)" : "#94a3b8" }}
-            >
-              {topic.description}
-            </p>
-          </div>
-        </div>
-
-        {/* Status badge */}
-        {isCurrent && (
-          <span
-            className="absolute -top-2 -right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white"
-            style={{ background: "#f59e0b" }}
-          >
-            NOW
-          </span>
-        )}
-        {isCompleted && (
-          <span
-            className="absolute -top-2 -right-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white"
-            style={{ background: "#22c55e" }}
-          >
-            ✓
-          </span>
-        )}
-      </button>
-    </div>
-  );
-}
+const GROUPS: RoadmapTopic["group"][] = ["Present Tense", "Past Tense", "Future Tense"];
 
 export default function RoadmapPage() {
   const [, setLocation] = useLocation();
   const [topics, setTopics] = useState<TopicWithStatus[]>(() => getTopicsWithStatus());
-  const [toast, setToast] = useState<string | null>(null);
-
+  const [openId, setOpenId] = useState<string | null>(() => topics.find(t => t.status === "current")?.id ?? topics[0]?.id ?? null);
   const completedCount = topics.filter(t => t.status === "completed").length;
-  const totalCount = topics.length;
 
-  function handleComplete(id: string) {
-    const topic = topics.find(t => t.id === id);
-    if (!topic || topic.status === "locked") return;
-    setLocation(`/lesson/${id}`);
+  function finish(topic: TopicWithStatus) {
+    if (topic.status === "locked") return;
+    const updated = completeTopic(topic.id);
+    addTopic(topic.title);
+    recordAnswer(true);
+    logActivity("roadmap", `${topic.title} completed`);
+    const next = getTopicsWithStatus().map(t => ({ ...t, status: updated[t.id] ?? t.status }));
+    setTopics(next);
+    setOpenId(next.find(t => t.status === "current")?.id ?? topic.id);
   }
 
   return (
-    <div className="min-h-screen pb-10" style={{ background: "#f2f5f9" }}>
-      {/* Toast */}
-      {toast && (
-        <div
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl text-white text-sm font-semibold shadow-lg"
-          style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)", maxWidth: "90vw" }}
-        >
-          {toast}
-        </div>
-      )}
-
-      {/* Header */}
-      <div
-        className="px-4 pt-10 pb-6"
-        style={{ background: "linear-gradient(135deg,#059669,#10b981)" }}
-      >
-        <div className="flex items-center gap-3 mb-4">
-          <button
-            onClick={() => setLocation("/home")}
-            className="w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(255,255,255,0.2)" }}
-          >
-            <ArrowLeft size={18} className="text-white" />
-          </button>
-          <div className="flex-1">
-            <p className="text-white font-bold text-lg leading-tight">Learning Roadmap</p>
-            <p className="text-white/60 text-xs">Complete each topic to unlock the next</p>
-          </div>
-        </div>
-
-        {/* Progress */}
-        <div className="rounded-2xl px-4 py-3" style={{ background: "rgba(255,255,255,0.15)" }}>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-white text-sm font-semibold">Overall Progress</p>
-            <p className="text-white font-bold">{completedCount}/{totalCount}</p>
-          </div>
-          <div className="w-full h-2 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }}>
-            <div
-              className="h-2 rounded-full transition-all duration-500"
-              style={{
-                width: `${(completedCount / totalCount) * 100}%`,
-                background: "white",
-              }}
-            />
-          </div>
-        </div>
+    <div className="min-h-screen pb-10" style={{ background: "linear-gradient(135deg,#eefdf7,#eef6ff 55%,#f7efff)" }}>
+      <div className="px-4 pt-10 pb-6" style={{ background: "linear-gradient(135deg,#059669,#10b981)" }}>
+        <div className="flex items-center gap-3 mb-4"><button onClick={() => setLocation("/home")} className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.2)" }}><ArrowLeft size={18} className="text-white" /></button><div className="flex-1"><p className="text-white font-bold text-lg leading-tight">Tense-Based Learning Path</p><p className="text-white/70 text-xs">Let's start with Present Tense before moving to Past and Future</p></div></div>
+        <div className="rounded-2xl px-4 py-3" style={{ background: "rgba(255,255,255,0.15)" }}><div className="flex items-center justify-between mb-2"><p className="text-white text-sm font-semibold">Overall Progress</p><p className="text-white font-bold">{completedCount}/{topics.length}</p></div><div className="w-full h-2 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }}><div className="h-2 rounded-full transition-all duration-500 bg-white" style={{ width: `${(completedCount / topics.length) * 100}%` }} /></div></div>
       </div>
 
-      {/* Roadmap */}
-      <div className="max-w-lg mx-auto px-4 pt-5">
-        <div className="relative">
-          {/* SVG connector lines */}
-          <svg
-            className="absolute inset-0 w-full pointer-events-none"
-            style={{ height: topics.length * 88 }}
-            overflow="visible"
-          >
-            {topics.slice(0, -1).map((topic, i) => {
-              const isLeft = i % 2 === 0;
-              const nextLocked = topics[i + 1]?.status === "locked";
-              const y1 = i * 88 + 44;
-              const y2 = (i + 1) * 88 + 44;
-              const x1 = isLeft ? "calc(50% - 24px)" : "calc(50% + 24px)";
-              const x2 = isLeft ? "calc(50% + 24px)" : "calc(50% - 24px)";
-
-              return (
-                <path
-                  key={topic.id}
-                  d={`M ${isLeft ? "38%" : "62%"} ${y1} C 50% ${(y1 + y2) / 2}, 50% ${(y1 + y2) / 2}, ${isLeft ? "62%" : "38%"} ${y2}`}
-                  fill="none"
-                  stroke={nextLocked ? "#cbd5e1" : "#22c55e"}
-                  strokeWidth="2.5"
-                  strokeDasharray={nextLocked ? "6 4" : "none"}
-                  strokeLinecap="round"
-                />
-              );
-            })}
-          </svg>
-
-          {/* Topic nodes */}
-          <div className="space-y-3">
-            {topics.map((topic, i) => (
-              <div key={topic.id} className="fade-up" style={{ animationDelay: `${i * 0.03}s` }}>
-                <TopicNode topic={topic} index={i} onComplete={handleComplete} />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div
-          className="mt-6 rounded-2xl p-4 flex flex-wrap gap-3"
-          style={{ background: "white" }}
-        >
-          {[
-            { color: "#22c55e", label: "Completed" },
-            { color: "#1a8fd1", label: "Current (tap to finish)" },
-            { color: "#cbd5e1", label: "Locked", dashed: true },
-          ].map(item => (
-            <div key={item.label} className="flex items-center gap-1.5">
-              <div
-                className="w-3 h-3 rounded-full shrink-0"
-                style={{
-                  background: item.color,
-                  border: item.dashed ? `2px dashed ${item.color}` : "none",
-                }}
-              />
-              <span className="text-[11px] text-slate-500">{item.label}</span>
-            </div>
-          ))}
-        </div>
+      <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
+        {GROUPS.map(group => {
+          const groupTopics = topics.filter(t => t.group === group);
+          const done = groupTopics.filter(t => t.status === "completed").length;
+          const locked = groupTopics.every(t => t.status === "locked");
+          return <section key={group} className="rounded-3xl bg-white/82 backdrop-blur p-4 shadow-sm border border-white">
+            <div className="flex items-center justify-between mb-3"><div><p className="font-black text-slate-800">{group} <span className="text-emerald-600">({done}/3 completed)</span></p><p className="text-xs text-slate-500">{locked ? `${group} locked until previous tense is done` : "Complete quizzes to unlock the next tense"}</p></div>{locked && <Lock size={18} className="text-slate-400" />}</div>
+            <div className="space-y-3">{groupTopics.map((topic, i) => {
+              const isOpen = openId === topic.id;
+              const lockedTopic = topic.status === "locked";
+              return <div key={topic.id} className="rounded-2xl border overflow-hidden" style={{ borderColor: topic.status === "completed" ? "#22c55e" : topic.status === "current" ? "#38bdf8" : "#e2e8f0", background: lockedTopic ? "#f8fafc" : "white" }}>
+                <button disabled={lockedTopic} onClick={() => setOpenId(isOpen ? null : topic.id)} className="w-full p-3 flex items-center gap-3 text-left active:scale-[0.99] transition-all" style={{ opacity: lockedTopic ? 0.55 : 1 }}><span className="w-9 h-9 rounded-full flex items-center justify-center text-lg" style={{ background: topic.status === "completed" ? "#dcfce7" : topic.status === "current" ? "#e0f2fe" : "#f1f5f9" }}>{topic.status === "completed" ? <CheckCircle size={18} className="text-green-600" /> : lockedTopic ? <Lock size={15} className="text-slate-400" /> : topic.emoji}</span><div className="flex-1"><p className="font-bold text-sm text-slate-800">{i + 1}. {topic.title}</p><p className="text-xs text-slate-500">{topic.description}</p></div></button>
+                {isOpen && !lockedTopic && <div className="px-4 pb-4 space-y-3 fade-up"><Info title="1) Rule / Formula" body={topic.formula} /><Info title="2) Examples" body={topic.examples.join("\n")} /><Info title="3) Practice" body={topic.practice.join("\n")} /><Info title="4) Quiz to unlock next" body={topic.quiz} /><button onClick={() => finish(topic)} className="w-full py-3 rounded-2xl text-white font-bold btn-3d flex items-center justify-center gap-2" style={{ background: topic.status === "completed" ? "linear-gradient(135deg,#22c55e,#16a34a)" : "linear-gradient(135deg,#0ea5e9,#10b981)" }}><BookOpen size={16} />{topic.status === "completed" ? "Completed" : "Pass Quiz & Complete"}</button></div>}
+              </div>;
+            })}</div>
+          </section>;
+        })}
       </div>
     </div>
   );
 }
+
+function Info({ title, body }: { title: string; body: string }) { return <div className="rounded-2xl p-3" style={{ background: "rgba(240,249,255,0.8)", border: "1px solid rgba(125,211,252,0.35)" }}><p className="text-xs font-black text-sky-700 mb-1">{title}</p><p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">{body}</p></div>; }

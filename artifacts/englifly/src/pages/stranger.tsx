@@ -12,6 +12,7 @@ import { containsProfanity } from "@/lib/profanity";
 import { ArrowLeft, Send, Flag, Timer, UserX, RefreshCw, AlertTriangle } from "lucide-react";
 import { ChatBackground } from "@/components/chat-ui";
 import { Timestamp } from "firebase/firestore";
+import { incrementMsgs, logActivity } from "@/lib/dailyStats";
 
 type Phase = "idle" | "searching" | "matched" | "ended";
 
@@ -233,6 +234,8 @@ export default function StrangerChat() {
 
     setIsSending(true);
     setInputText("");
+    incrementMsgs();
+    logActivity("chat", "Chat Stranger");
     await sendMessage(firestore, sessionId, uid, text).catch(() => {});
     setIsSending(false);
   }

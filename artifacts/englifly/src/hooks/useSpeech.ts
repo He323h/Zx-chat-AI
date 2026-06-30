@@ -1,9 +1,59 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 
+type SpeechRecognitionErrorCode =
+  | "aborted"
+  | "audio-capture"
+  | "bad-grammar"
+  | "language-not-supported"
+  | "network"
+  | "no-speech"
+  | "not-allowed"
+  | "phrases-not-supported"
+  | "service-not-allowed";
+
+interface SpeechRecognitionResultItem {
+  transcript: string;
+}
+
+interface SpeechRecognitionResult {
+  readonly isFinal: boolean;
+  readonly [index: number]: SpeechRecognitionResultItem;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  readonly [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionEvent extends Event {
+  readonly resultIndex: number;
+  readonly results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  readonly error: SpeechRecognitionErrorCode;
+}
+
+interface SpeechRecognition {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onspeechend: (() => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  abort: () => void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognition;
+
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition;
-    webkitSpeechRecognition: typeof SpeechRecognition;
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
   }
 }
 
@@ -18,7 +68,7 @@ interface UseSpeechReturn {
   isSupported: boolean;
 }
 
-function getSpeechRecognition(): typeof SpeechRecognition | null {
+function getSpeechRecognition(): SpeechRecognitionConstructor | null {
   if (typeof window === "undefined") return null;
   return window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null;
 }
@@ -43,12 +93,11 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
 
   // Pre-warm voices on mount so first speak() is fast
   useEffect(() => {
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.getVoices();
-      const handler = () => window.speechSynthesis.getVoices();
-      window.speechSynthesis.addEventListener("voiceschanged", handler);
-      return () => window.speechSynthesis.removeEventListener("voiceschanged", handler);
-    }
+    if (typeof window === "undefined" || !window.speechSynthesis) return undefined;
+    window.speechSynthesis.getVoices();
+    const handler = () => window.speechSynthesis.getVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", handler);
+    return () => window.speechSynthesis.removeEventListener("voiceschanged", handler);
   }, []);
 
   // ── Stop speaking ─────────────────────────────────────────────────────────────
@@ -167,7 +216,7 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
       setTranscript("🎙️ Bol raha hoon...");
     };
 
-    rec.onresult = (event) => {
+    rec.onresult = (event: SpeechRecognitionEvent) => {
       let interim = "";
       let finalSegment = "";
 
@@ -205,7 +254,7 @@ export function useSpeech(onTranscriptReady?: (text: string) => void): UseSpeech
       }
     };
 
-    rec.onerror = (event) => {
+    rec.onerror = (event: SpeechRecognitionErrorEvent) => {
       if (event.error === "aborted") return;
       if (event.error === "no-speech") {
         // No speech — keep listening
