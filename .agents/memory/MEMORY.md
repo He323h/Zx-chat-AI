@@ -1,0 +1,2 @@
+- [EngliFly Vite port config](englifly-vite-port.md) — artifact expects PORT=18445; vite.config.ts must read from process.env.PORT with numeric validation.
+- [EngliFly claymorphism system](englifly-clay-system.md) — design system is CSS-class-based in index.css; use clay-page/clay-header/clay-card/clay-btn/clay-nav classes for all screens.

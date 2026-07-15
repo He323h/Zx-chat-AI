@@ -1,0 +1,33 @@
+Redesign the entire chat interface across ALL features (English with Me, Voice Call Practice, Actor Mode, Chat Stranger, AI Teacher) with a premium, high-end, 3D-feeling design — current chat UI is too plain/flat, looks like a basic template.
+1. Glassmorphism Chat Bubbles (3D depth feel)
+
+AI message bubbles: frosted-glass effect (translucent background blur, soft white/light border, subtle drop shadow) in one consistent color theme — e.g. light blue-tinted glass
+User message bubbles: a clearly different color glass theme (e.g. purple/violet-tinted glass) so it's instantly obvious who said what, even without looking at avatars
+Add a soft floating shadow beneath each bubble so they look like they're hovering above the background, not flat
+Background of the whole chat screen should have soft blurred gradient shapes/orbs floating behind the bubbles (this is what makes glass bubbles look real — glass needs something colorful behind it to refract)
+Avatars: AI gets a small glowing circular avatar (pulsing softly when AI is "thinking" or speaking), user gets their own initial/avatar in a different accent color
+
+2. Voice Feedback with Audio Praise
+
+When the user speaks a sentence correctly or scores well on pronunciation, play a short positive voice/sound clip from the AI saying things like "Excellent!", "Great job!", "Perfect pronunciation!", "You're doing amazing!" — vary the phrases randomly so it doesn't repeat the same word every time
+Pair the voice praise with a matching visual: a burst of confetti/sparkle animation around the message bubble, plus a brief golden glow around the score number
+For partially correct answers, use softer encouraging voice lines like "Good try, almost there!" or "Nice, just work on this part" — never harsh or negative tone
+Mistakes should NOT get negative sound effects — keep it neutral/encouraging only, paired with the specific correction highlighted visually
+
+3. Make it feel "alive" — premium micro-interactions
+
+Buttons should have a soft 3D press effect (slightly sinks down with shadow change when tapped, springs back up)
+When AI is about to speak, show a glowing pulse animation around its avatar that syncs with the voice output rhythm (like a heartbeat/breathing effect)
+Smooth spring-physics animations for bubbles appearing (not just fade — slight bounce/scale-in effect)
+Score/streak numbers should animate by counting up with a subtle bounce at the end, not just appear
+
+4. Consistency across the whole app
+
+Apply this exact same glass-bubble + color-coded (AI vs user) + voice praise + animation system to every single chat-based feature (English with Me, Actor Mode, Chat Stranger, Voice Call, AI Teacher) — not just one screen, so the whole app feels like one premium product, not a mix of styles
+Keep text fully readable: always add a subtle solid-color tint behind the glass blur so text never gets lost against busy backgrounds
+
+5. Remove anything that looks cheap/generic
+
+No flat plain white/gray chat bubbles anywhere
+No instant "pop-in" text — always animate entrances
+No generic browser-style buttons — every interactive element should have the soft 3D glass/shadow treatment

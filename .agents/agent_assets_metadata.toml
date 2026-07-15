@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "pSo__54cAeMpmsxI8WupB"
+uri = "file://englifly-twa-update.zip"
+type = "unspecified"
+title = "EngliFly TWA Update Package (Icons + Manifest)"
+
+[[outputs]]
+id = "OWSsM8GN-7SrlE83Qj5j6"
+uri = "file://attached_assets/download-qr-code.png"
+type = "image"
+title = "Download page QR code"

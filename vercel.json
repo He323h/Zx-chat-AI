@@ -1,0 +1,7 @@
+{
+  "buildCommand": "pnpm --filter @workspace/englifly build",
+  "outputDirectory": "artifacts/englifly/dist/public",
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}

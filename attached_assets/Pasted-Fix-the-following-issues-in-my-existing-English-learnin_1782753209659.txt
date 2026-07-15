@@ -1,0 +1,65 @@
+Fix the following issues in my existing English learning web app. Do NOT break any other existing functionality. Match the existing color scheme and design style.
+
+═══════════════════════════════════
+FIX 1: STREAK BADGES PAGE - LAYOUT OVERFLOW
+═══════════════════════════════════
+Problem: The "15-Day Progress" section shows numbered circles (1 to 15) in a single row that overflows off the screen on mobile, so circles after a certain point are not visible.
+Fix:
+- Make the 15-day circles wrap into multiple rows (use CSS flex-wrap or grid with 5 circles per row) instead of one long horizontal row
+- OR alternatively, make it horizontally scrollable with smooth scroll snapping, with a small scroll hint arrow
+- Ensure it's fully responsive and all 15 circles are visible/accessible on small mobile screens (320px-400px width)
+
+═══════════════════════════════════
+FIX 2: DAILY QUIZ - BETTER QUESTION FORMAT
+═══════════════════════════════════
+Problem: Current quiz asks abstract vocabulary definition questions like "What does 'resilient' mean?" which feels like a dictionary test, not practical learning.
+Fix: Change the question bank/generation logic to focus on PRACTICAL sentence-based questions, such as:
+- Fill in the blank: "She ____ to school every day." (options: go, goes, going, gone)
+- Correct the sentence: "Which sentence is correct?" with 4 sentence options, only 1 grammatically correct
+- Choose the right word in context: "I am looking ____ forward to the trip." (options: at, for, forward, on)
+- Tense identification: "He ___ (go) to the market yesterday." (went, goes, going, gone)
+If using AI to generate questions, use this type of prompt to the AI: "Generate 7 practical English learning multiple choice questions for a beginner-intermediate learner. Mix fill-in-the-blank sentences, correct sentence identification, and contextual word choice questions. Avoid abstract dictionary-style 'what does X mean' questions. Return as JSON array: [{question, options: [{text, isCorrect}]}]"
+
+═══════════════════════════════════
+FIX 3: GRAMMAR CHECK → CONVERT TO WORD ARRANGE EXERCISE (Duolingo style)
+═══════════════════════════════════
+Problem: Current Grammar Check only lets user type a full sentence to get it corrected. Instead, build a Duolingo-style WORD ARRANGEMENT exercise.
+New Feature Logic:
+- Show a jumbled/shuffled set of word tiles (buttons) for a target sentence, e.g. tiles: ["school", "to", "I", "go", "every day"]
+- User taps words in order to build the sentence at the top in a sentence-building area
+- If user taps a word, move it from the tile pool to the sentence area (in order tapped); tapping again in sentence area removes it back to pool
+- On completing all tiles, check if the order matches the correct sentence
+- Show ✅ "Correct!" with green highlight if right, or ❌ "Try again" with the correct order shown if wrong
+- Implement LEVELS: Level 1 = simple short sentences, Level 2 = slightly longer with conjunctions, Level 3 = complex sentences with prepositions/tenses, and so on increasing difficulty
+- Make it UNLIMITED — generate new sentences for each level. Use a sentence bank (JSON array organized by level/difficulty) or call AI API: "Generate 5 English sentences appropriate for difficulty level {level} for a Hindi-speaking English learner, increasing in grammar complexity as level increases. Return as JSON array of sentence strings."
+- Track current level and completed exercises in localStorage, with a "Next Level" unlock only after completing current level's exercises (e.g. 5 correct sentences)
+- Show progress bar for current level: "Level 2: 3/5 completed"
+
+═══════════════════════════════════
+FIX 4: HOMEPAGE SECTION ORDER
+═══════════════════════════════════
+Problem: On the homepage, "Your Progress" section (Streak Badges, Daily Quiz, Roadmap, Grammar Check cards) appears ABOVE "More Features" section (Vocabulary, Actor Mode, Chat Stranger, AI Teacher). 
+Fix: Swap the order — "More Features" section should appear FIRST (on top), and "Your Progress" section should appear AFTER it (below), since progress tracking is secondary to the core learning features.
+
+═══════════════════════════════════
+FIX 5: LEARNING ROADMAP - NODES SHOULD OPEN ACTUAL LESSON CONTENT
+═══════════════════════════════════
+Problem: Clicking on a topic node (like "Greetings") in the Learning Roadmap just marks it visually but doesn't open any real content. There's no actual lesson behind each topic.
+Fix:
+- When user taps an unlocked/current topic card (e.g., "Greetings"), navigate to a new lesson screen/page specific to that topic
+- Each topic's lesson screen should contain:
+  - A short intro/explanation of the topic in simple English + Hindi translation
+  - 5-8 example phrases/sentences related to that topic with Hindi meaning (e.g., for "Greetings": "Good morning - सुप्रभात", "How are you? - आप कैसे हैं?")
+  - A small 3-5 question practice quiz at the end specific to that topic
+  - A "Mark as Complete" button at the bottom — only enabled after user views all content and attempts the practice quiz
+  - On completing, update that topic's status to "completed" in localStorage and unlock the next topic in the roadmap
+- Use AI API to generate this lesson content dynamically if you don't have a fixed content bank, with a prompt like: "Generate a short English lesson about the topic '{topicTitle}' for a Hindi-speaking beginner. Include: 1) a simple explanation, 2) 6 example phrases with Hindi translation, 3) 4 multiple choice practice questions related to this topic. Return as JSON: {explanation, hindiExplanation, examples: [{english, hindi}], quiz: [{question, options: [{text, isCorrect}]}]}"
+- If a topic node is locked (previous topic not completed), tapping it should show a small toast/alert: "Complete the previous topic first!" instead of opening anything
+
+═══════════════════════════════════
+GENERAL NOTES:
+═══════════════════════════════════
+- Test each fix individually before moving to next
+- Keep existing UI design/colors consistent across all these screens
+- Make sure all changes are mobile-responsive (most users are on phones, screen width ~360-400px)
+- Persist all progress data in localStorage unless a database is already connected, in which case use the database
