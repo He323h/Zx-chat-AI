@@ -1,8 +1,8 @@
 {
   "packageId": "app.vercel.zx_chat_ai.twa",
   "host": "YOUR_DOMAIN.vercel.app",
-  "name": "EngliFly",
-  "launcherName": "EngliFly",
+  "name": "English Tutor - AI Powered",
+  "launcherName": "English Tutor - AI Powered",
   "display": "standalone",
   "orientation": "portrait",
   "themeColor": "#1CB0F6",
