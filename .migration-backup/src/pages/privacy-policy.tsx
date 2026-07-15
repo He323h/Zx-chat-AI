@@ -17,7 +17,7 @@ export default function PrivacyPolicy() {
       <div className="max-w-lg mx-auto px-4 py-6">
         <div className="bg-white rounded-2xl border border-border shadow-sm p-5 space-y-5 text-sm text-foreground leading-relaxed">
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Last updated: June 2025</p>
+            <p className="text-xs text-muted-foreground mb-1">Last updated: June 2026</p>
             <p className="text-muted-foreground text-xs">
               This Privacy Policy describes how ZX-Chat AI ("we", "our", or "the app") collects, uses, and protects your information when you use our application.
             </p>
