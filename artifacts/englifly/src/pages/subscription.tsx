@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { ArrowLeft, Check, Zap, Crown, Sprout } from "lucide-react";
+import { ArrowLeft, Check, Crown, Sprout } from "lucide-react";
 
 const PLANS = [
   {
@@ -12,17 +12,6 @@ const PLANS = [
     highlight: false,
     accentColor: "#4caf50",
     features: ["3 days full access", "All conversation topics", "No credit card needed"],
-  },
-  {
-    id: "basic",
-    name: "Basic",
-    price: "₹39",
-    period: "/month",
-    daily: "60 min/day",
-    Icon: Zap,
-    highlight: false,
-    accentColor: "hsl(200, 92%, 42%)",
-    features: ["60 min of chat daily", "All topics & levels", "Grammar corrections"],
   },
   {
     id: "pro",
