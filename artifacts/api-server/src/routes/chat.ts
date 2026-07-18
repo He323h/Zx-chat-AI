@@ -1,5 +1,7 @@
 import { Router, type IRouter } from "express";
 import { chatRateLimit } from "../middleware/rateLimits.js";
+import { callWithRotation } from "../lib/keyRotator.js";
+import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
 
@@ -68,17 +70,22 @@ router.post("/chat", chatRateLimit, async (req, res) => {
   const maxTokens =
     categoryKey === "vocabulary" ? 500 : categoryKey === "actor" ? 600 : 150;
 
-  // 1. Try Replit AI Integration (OpenAI via proxy)
+  // ── 1. Cerebras / Groq rotation (priority chain) ───────────────────────────
+  const rotated = await callWithRotation(messages, maxTokens);
+  if (rotated) {
+    logger.info({ usedKey: rotated.usedKey }, "[chat] Served by rotation pool");
+    res.json({ message: rotated.reply });
+    return;
+  }
+
+  // ── 2. Fallback: Replit AI Integration (OpenAI proxy) ─────────────────────
   const replitBase = process.env["AI_INTEGRATIONS_OPENAI_BASE_URL"];
   const replitKey  = process.env["AI_INTEGRATIONS_OPENAI_API_KEY"];
   if (replitBase && replitKey) {
     try {
       const response = await fetch(`${replitBase}/chat/completions`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${replitKey}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${replitKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({ model: "gpt-4o-mini", messages, max_tokens: maxTokens, temperature: 0.7 }),
       });
       const data = await response.json() as {
@@ -90,11 +97,11 @@ router.post("/chat", chatRateLimit, async (req, res) => {
         if (reply) { res.json({ message: reply }); return; }
       }
     } catch (e) {
-      console.warn("[chat] Replit AI error:", e);
+      logger.warn({ err: e }, "[chat] Replit AI fallback error");
     }
   }
 
-  // 2. Try OPENAI_API_KEY
+  // ── 3. Fallback: OpenAI ────────────────────────────────────────────────────
   const openaiKey = process.env["OPENAI_API_KEY"];
   if (openaiKey) {
     try {
@@ -112,11 +119,11 @@ router.post("/chat", chatRateLimit, async (req, res) => {
         if (reply) { res.json({ message: reply }); return; }
       }
     } catch (e) {
-      console.warn("[chat] OpenAI error:", e);
+      logger.warn({ err: e }, "[chat] OpenAI fallback error");
     }
   }
 
-  // 3. Try GEMINI_API_KEY
+  // ── 4. Fallback: Gemini ────────────────────────────────────────────────────
   const geminiKey = process.env["GEMINI_API_KEY"];
   if (geminiKey) {
     try {
@@ -144,11 +151,11 @@ router.post("/chat", chatRateLimit, async (req, res) => {
         if (reply) { res.json({ message: reply }); return; }
       }
     } catch (e) {
-      console.warn("[chat] Gemini error:", e);
+      logger.warn({ err: e }, "[chat] Gemini fallback error");
     }
   }
 
-  res.status(503).json({ error: "AI service unavailable — please configure an API key." });
+  res.status(503).json({ error: "AI service unavailable — all keys exhausted or unconfigured." });
 });
 
 export default router;
