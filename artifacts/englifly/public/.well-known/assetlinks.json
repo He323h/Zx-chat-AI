@@ -2,7 +2,7 @@
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "app.vercel.zx_chat_ai.twa",
-    "sha256_cert_fingerprints": ["00:D7:A1:8C:BC:BC:AF:18:90:48:C0:6D:71:5E:C0:37:93:4C:B3:B7:5F:74:CA:97:38:F1:E1:2F:35:A9:45:7A"]
+    "package_name": "com.englishtutorai.app",
+    "sha256_cert_fingerprints": ["68:1B:0B:04:7C:33:9F:01:73:F6:C0:69:71:B8:4C:57:66:F3:05:62:B7:FD:9E:7F:82:17:EF:D9:9C:7B:AE:C9"]
   }
 }]
