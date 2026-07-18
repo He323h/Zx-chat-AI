@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGetUserProfile, useGetTodayUsage, getGetUserProfileQueryKey, getGetTodayUsageQueryKey } from "@/lib/api";
-import { Settings, Crown, Users, Mic, ChevronRight, GraduationCap } from "lucide-react";
+import { Settings, Users, Mic, ChevronRight, GraduationCap } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getStats, getAccuracy, type DailyStats } from "@/lib/dailyStats";
 import { getStreak } from "@/lib/streakSystem";
@@ -34,7 +34,6 @@ export default function Home() {
   const accuracy = getAccuracy();
   const firstName = (user?.displayName ?? user?.email ?? "").split(/[@\s]/)[0] || "Learner";
   const streak = profile?.streak ?? getStreak().currentStreak;
-  const subscription = profile?.subscription ?? "trial";
   const remainingMin = usage?.remainingMinutes === 9999 ? null : usage?.remainingMinutes;
 
   const quizState = getQuizState();
@@ -62,19 +61,11 @@ export default function Home() {
                 Hey, {firstName}! {streak > 0 ? `🔥 ${streak} day streak` : "👋 Welcome"}
               </p>
               <p className="text-white/65 text-[11px]">
-                {subscription === "trial" ? "Free trial active" : `${subscription} plan`}
-                {remainingMin !== null ? ` · ${remainingMin} min left` : ""}
+                {remainingMin !== null ? `${remainingMin} min left today` : "Unlimited practice"}
               </p>
             </div>
           </div>
           <div className="flex gap-2">
-            {subscription !== "pro" && (
-              <button onClick={() => setLocation("/subscription")}
-                className="w-9 h-9 rounded-[14px] flex items-center justify-center"
-                style={{ background: "rgba(255,255,255,0.22)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.35)" }}>
-                <Crown size={15} className="text-amber-300" />
-              </button>
-            )}
             <button onClick={() => setLocation("/settings")}
               className="w-9 h-9 rounded-[14px] flex items-center justify-center"
               style={{ background: "rgba(255,255,255,0.22)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.35)" }}>
@@ -185,24 +176,6 @@ export default function Home() {
               </button>
             ))}
           </div>
-        </div>
-
-        {/* ── Clay Ad Banner ── */}
-        <div className="clay-card p-5 flex items-center gap-4"
-          style={{ background: "linear-gradient(135deg,#1A2B3C,#0e1e2e)", boxShadow: "-4px -4px 10px rgba(255,255,255,0.15), 6px 6px 18px rgba(0,0,0,0.3)" }}>
-          <div className="w-14 h-14 rounded-[18px] flex items-center justify-center text-3xl shrink-0"
-            style={{ background: "rgba(28,176,246,0.2)" }}>
-            🚀
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-[14px] leading-tight">Boost Your English Fast!</p>
-            <p className="text-white/55 text-[11px] mt-0.5">15 min daily — results in 30 days</p>
-          </div>
-          <button onClick={() => setLocation("/subscription")}
-            className="clay-btn px-4 py-2 text-[12px] shrink-0"
-            style={{ borderRadius: 14 }}>
-            Upgrade
-          </button>
         </div>
 
       </div>

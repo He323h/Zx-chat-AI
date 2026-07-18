@@ -13,7 +13,7 @@ import {
 } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  Mic, MicOff, Send, ArrowLeft, Volume2, VolumeX, Crown,
+  Mic, MicOff, Send, ArrowLeft, Volume2, VolumeX,
   Phone, PhoneOff,
 } from "lucide-react";
 import {
@@ -582,13 +582,6 @@ export default function Chat() {
               style={{ background: "rgba(241,245,249,0.8)" }}>
               {isMuted ? <VolumeX size={18} className="text-muted-foreground" /> : <Volume2 size={18} style={{ color: "hsl(var(--primary))" }} />}
             </button>
-            {profile?.subscription !== "pro" && (
-              <button onClick={() => setLocation("/subscription")}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all btn-3d"
-                style={{ background: "rgba(241,245,249,0.8)" }}>
-                <Crown size={18} className="text-amber-500" />
-              </button>
-            )}
           </div>
         </div>
 

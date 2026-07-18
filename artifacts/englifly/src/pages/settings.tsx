@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGetUserProfile, getGetUserProfileQueryKey } from "@/lib/api";
-import { ArrowLeft, Crown, LogOut, ChevronRight, Volume2, Gauge, FileText, Info, Shield, Zap, Bell } from "lucide-react";
+import { ArrowLeft, LogOut, ChevronRight, Volume2, Gauge, FileText, Info, Shield, Bell } from "lucide-react";
 import {
   isNotificationSupported,
   getNotificationEnabled,
@@ -124,10 +124,6 @@ export default function Settings() {
             <p className="font-black text-[#1A2B3C] text-base capitalize truncate">{firstName}</p>
             <p className="text-[#6B7785] text-xs truncate">{user?.email}</p>
             <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full text-white"
-                style={{ background: "linear-gradient(135deg,#1CB0F6,#0E8FD4)" }}>
-                {profile?.subscription ?? "trial"} plan
-              </span>
               {(profile?.streak ?? 0) > 0 && (
                 <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
                   🔥 {profile?.streak}-day streak
@@ -135,15 +131,6 @@ export default function Settings() {
               )}
             </div>
           </div>
-          {(profile?.subscription ?? "trial") !== "pro" && (
-            <button
-              onClick={() => setLocation("/subscription")}
-              aria-label="Upgrade to Pro"
-              className="w-11 h-11 rounded-[16px] flex items-center justify-center shrink-0"
-              style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)", boxShadow: "-2px -2px 5px rgba(255,255,255,0.6), 3px 3px 10px rgba(217,119,6,0.4)" }}>
-              <Crown size={18} className="text-white" />
-            </button>
-          )}
         </div>
       </div>
 
@@ -258,31 +245,6 @@ export default function Settings() {
             <p className="text-[11px] text-[#6B7785] text-center pb-1">
               Available voices depend on your device & browser
             </p>
-          </div>
-        </ClayCard>
-
-        {/* Subscription */}
-        <ClayCard>
-          <ClayCardHeader icon={<Zap size={15} className="text-white" />} iconBg="linear-gradient(135deg,#f59e0b,#d97706)" title="Subscription" />
-          <div className="px-4 pb-4">
-            <div className="flex items-center justify-between p-3 rounded-[16px]"
-              style={{ background: "#EAF4FF", boxShadow: "inset 1px 1px 4px rgba(28,176,246,0.12), inset -1px -1px 3px rgba(255,255,255,0.9)" }}>
-              <div>
-                <p className="font-black text-[#1A2B3C] text-sm capitalize">{profile?.subscription ?? "trial"} Plan</p>
-                {profile?.trialEndsAt && profile.subscription === "trial" && (
-                  <p className="text-xs text-[#6B7785] mt-0.5">
-                    Trial ends {new Date(profile.trialEndsAt).toLocaleDateString()}
-                  </p>
-                )}
-              </div>
-              {(profile?.subscription ?? "trial") !== "pro" && (
-                <button onClick={() => setLocation("/subscription")}
-                  className="clay-btn text-xs px-3 py-1.5"
-                  style={{ borderRadius: 12 }}>
-                  View Plans
-                </button>
-              )}
-            </div>
           </div>
         </ClayCard>
 

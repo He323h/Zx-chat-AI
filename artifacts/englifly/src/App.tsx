@@ -11,7 +11,6 @@ import Home from "@/pages/home";
 import LevelSelect from "@/pages/level-select";
 import Chat from "@/pages/chat";
 import StrangerChat from "@/pages/stranger";
-import Subscription from "@/pages/subscription";
 import Settings from "@/pages/settings";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import Terms from "@/pages/terms";
@@ -124,7 +123,6 @@ function Router() {
         <Route path="/vocabulary" component={VocabularyPage} />
         <Route path="/actor" component={ActorPage} />
         <Route path="/teacher" component={TeacherPage} />
-        <Route path="/subscription" component={Subscription} />
         <Route path="/settings" component={Settings} />
         <Route path="/privacy-policy" component={PrivacyPolicy} />
         <Route path="/terms" component={Terms} />
