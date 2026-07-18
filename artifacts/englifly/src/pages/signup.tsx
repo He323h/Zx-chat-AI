@@ -67,9 +67,9 @@ export default function Signup() {
         <div className="fade-up flex flex-col items-center mb-7">
           <div className="w-20 h-20 rounded-3xl overflow-hidden flex items-center justify-center shadow-2xl mb-4"
             style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(20px)", border: "2px solid rgba(255,255,255,0.35)" }}>
-            <img src="/owl-logo.png" alt="EngliFly" className="w-full h-full object-cover" />
+            <img src="/owl-logo.png" alt="English Tutor - AI Powered" className="w-full h-full object-cover" />
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tight">EngliFly</h1>
+          <h1 className="text-3xl font-black text-white tracking-tight">English Tutor - AI Powered</h1>
           <div className="flex items-center gap-2 mt-2">
             <span className="text-xs font-semibold px-3 py-1 rounded-full text-white"
               style={{ background: "rgba(255,255,255,0.2)" }}>✅ 3 days free</span>

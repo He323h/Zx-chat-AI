@@ -19,7 +19,7 @@ export default function PrivacyPolicy() {
           <div>
             <p className="text-xs text-muted-foreground mb-1">Last updated: July 2026</p>
             <p className="text-muted-foreground text-xs">
-              This Privacy Policy describes how EngliFly / AI English Tutor / ZX-Chat AI ("we", "our", or "the app") collects, uses, and protects your information when you use our application.
+              This Privacy Policy describes how English Tutor - AI Powered ("we", "our", or "the app") collects, uses, and protects your information when you use our application.
             </p>
           </div>
 
@@ -34,7 +34,7 @@ export default function PrivacyPolicy() {
           </Section>
 
           <Section title="2. App Features and Services">
-            <p className="text-muted-foreground mb-2">EngliFly / AI English Tutor offers the following services:</p>
+            <p className="text-muted-foreground mb-2">English Tutor - AI Powered offers the following services:</p>
             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
               <li><strong className="text-foreground">AI Teacher for English Conversation Practice</strong> — Practice speaking English with our AI tutor in real-time conversations in Hindi and English.</li>
               <li><strong className="text-foreground">Voice Call Practice with AI</strong> — Engage in voice-based conversations to improve pronunciation and listening skills.</li>
@@ -81,7 +81,7 @@ export default function PrivacyPolicy() {
 
           <Section title="7. Children's Privacy">
             <p className="text-muted-foreground">
-              EngliFly / AI English Tutor is intended for users aged 13 and above. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has provided us with personal data, please contact us immediately.
+              English Tutor - AI Powered is intended for users aged 13 and above. We do not knowingly collect personal information from children under 13. If you believe a child under 13 has provided us with personal data, please contact us immediately.
             </p>
           </Section>
 

@@ -142,7 +142,7 @@ function CallModeOverlay({ phase, meta, onEndCall }: CallModeOverlayProps) {
 
       {/* Top: name */}
       <div className="w-full px-6 pt-14 text-center">
-        <p className="text-white/40 text-[11px] font-semibold tracking-widest uppercase mb-1">EngliFly</p>
+        <p className="text-white/40 text-[11px] font-semibold tracking-widest uppercase mb-1">English Tutor - AI Powered</p>
         <p className="text-white text-xl font-bold">{meta.label}</p>
       </div>
 

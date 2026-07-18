@@ -50,7 +50,7 @@ export default function Settings() {
     setNotifPermission(Notification.permission);
     if (granted) {
       setNotifEnabled(true);
-      showNotification("✅ Notifications enabled!", "You'll get daily practice reminders from EngliFly.");
+      showNotification("✅ Notifications enabled!", "You'll get daily practice reminders from English Tutor - AI Powered.");
     }
   }
 
@@ -292,7 +292,7 @@ export default function Settings() {
           <div className="px-2 pb-2">
             <SettingsRow icon={<FileText size={15} />} label="Privacy Policy" onClick={() => setLocation("/privacy-policy")} />
             <SettingsRow icon={<FileText size={15} />} label="Terms of Service" onClick={() => setLocation("/terms")} />
-            <SettingsRow icon={<Info size={15} />} label="About EngliFly" onClick={() => setLocation("/about")} last />
+            <SettingsRow icon={<Info size={15} />} label="About English Tutor - AI Powered" onClick={() => setLocation("/about")} last />
           </div>
         </ClayCard>
 

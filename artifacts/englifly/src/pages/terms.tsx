@@ -19,7 +19,7 @@ export default function Terms() {
           <div>
             <p className="text-xs text-muted-foreground mb-1">Last updated: June 2025</p>
             <p className="text-muted-foreground text-xs">
-              By using EngliFly ("the app"), you agree to these Terms of Service. Please read them carefully.
+              By using English Tutor - AI Powered ("the app"), you agree to these Terms of Service. Please read them carefully.
             </p>
           </div>
 
@@ -31,7 +31,7 @@ export default function Terms() {
 
           <Section title="2. Description of Service">
             <p className="text-muted-foreground">
-              EngliFly provides an AI-powered English language learning experience, including topic-based AI chat tutoring, voice practice, vocabulary building, and anonymous partner matching for conversation practice.
+              English Tutor - AI Powered provides an AI-powered English language learning experience, including topic-based AI chat tutoring, voice practice, vocabulary building, and anonymous partner matching for conversation practice.
             </p>
           </Section>
 
@@ -51,13 +51,13 @@ export default function Terms() {
 
           <Section title="4. AI Responses — No Guarantee of Accuracy">
             <p className="text-muted-foreground">
-              AI-generated responses are for educational and practice purposes only. EngliFly does not guarantee the accuracy, completeness, or correctness of any AI-generated content. You should not rely solely on the app for formal language certification or professional communication.
+              AI-generated responses are for educational and practice purposes only. English Tutor - AI Powered does not guarantee the accuracy, completeness, or correctness of any AI-generated content. You should not rely solely on the app for formal language certification or professional communication.
             </p>
           </Section>
 
           <Section title="5. Subscription & Payments">
             <p className="text-muted-foreground">
-              EngliFly currently offers a free 3-day trial with full access. Paid subscription plans (Basic, Pro) are <strong className="text-foreground">coming soon</strong>. When paid plans launch:
+              English Tutor - AI Powered currently offers a free 3-day trial with full access. Paid subscription plans (Basic, Pro) are <strong className="text-foreground">coming soon</strong>. When paid plans launch:
             </p>
             <ul className="list-disc pl-5 mt-2 space-y-1 text-muted-foreground">
               <li>Subscriptions will be charged on a monthly basis.</li>
@@ -74,13 +74,13 @@ export default function Terms() {
 
           <Section title="7. Limitation of Liability">
             <p className="text-muted-foreground">
-              EngliFly is provided "as is" without warranties of any kind. We are not liable for any indirect, incidental, or consequential damages arising from your use of the app, including but not limited to loss of data or service interruptions.
+              English Tutor - AI Powered is provided "as is" without warranties of any kind. We are not liable for any indirect, incidental, or consequential damages arising from your use of the app, including but not limited to loss of data or service interruptions.
             </p>
           </Section>
 
           <Section title="8. Age Requirement">
             <p className="text-muted-foreground">
-              You must be at least 13 years old to use EngliFly. Users under 18 should have parental or guardian consent.
+              You must be at least 13 years old to use English Tutor - AI Powered. Users under 18 should have parental or guardian consent.
             </p>
           </Section>
 

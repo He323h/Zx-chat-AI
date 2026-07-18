@@ -404,7 +404,7 @@ export default function StrangerChat() {
               {/* Report submitted banner */}
               {reportSubmitted && (
                 <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center shrink-0">
-                  <p className="text-amber-700 text-xs font-medium">✅ Report submitted. Thank you for keeping EngliFly safe.</p>
+                  <p className="text-amber-700 text-xs font-medium">✅ Report submitted. Thank you for keeping English Tutor - AI Powered safe.</p>
                 </div>
               )}
 

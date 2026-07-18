@@ -21,18 +21,18 @@ export default function About() {
         <div className="bg-white rounded-2xl border border-border shadow-sm p-6 flex flex-col items-center text-center fade-up">
           <div className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-lg mb-4 overflow-hidden"
             style={{ background: "hsl(var(--primary))" }}>
-            <img src="/owl-logo.png" alt="EngliFly" className="w-full h-full object-cover" />
+            <img src="/owl-logo.png" alt="English Tutor - AI Powered" className="w-full h-full object-cover" />
           </div>
-          <h2 className="text-xl font-bold text-foreground">EngliFly</h2>
+          <h2 className="text-xl font-bold text-foreground">English Tutor - AI Powered</h2>
           <p className="text-xs text-muted-foreground mt-1">Version {APP_VERSION}</p>
           <p className="text-sm text-muted-foreground mt-3 max-w-xs leading-relaxed">
-            EngliFly is an AI-powered English language learning app designed to help you practise speaking, listening, and writing English through real conversations.
+            English Tutor - AI Powered is an AI-powered English language learning app designed to help you practise speaking, listening, and writing English through real conversations.
           </p>
         </div>
 
         {/* Features */}
         <div className="bg-white rounded-2xl border border-border shadow-sm p-5 fade-up">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">What EngliFly offers</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">What English Tutor - AI Powered offers</p>
           <div className="space-y-3">
             {[
               { emoji: "✈️", title: "Topic-based AI Tutor", desc: "Practice Travel, Job Interview, Daily Speaking, Vocabulary & more" },
@@ -62,7 +62,7 @@ export default function About() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground pb-2">
-          © 2025 EngliFly · All rights reserved
+          © 2025 English Tutor - AI Powered · All rights reserved
         </p>
       </div>
     </div>

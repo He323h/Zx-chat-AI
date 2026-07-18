@@ -1,4 +1,4 @@
-# EngliFly (ZX-Chat AI)
+# English Tutor - AI Powered
 
 An AI-powered English learning app with chat tutoring, voice practice, and stranger chat for conversational practice.
 

@@ -63,7 +63,7 @@ export function showReminderIfNeeded(): void {
 
   const messages = [
     { title: "🎯 Time to practice English!", body: "You haven't practiced today. Just 5 minutes can make a big difference!" },
-    { title: "📚 Your English streak is waiting!", body: "Open EngliFly and keep your streak alive today." },
+    { title: "📚 Your English streak is waiting!", body: "Open English Tutor - AI Powered and keep your streak alive today." },
     { title: "💬 A quick chat will do!", body: "Even a 3-minute stranger chat counts as today's practice!" },
     { title: "🔥 Don't break your streak!", body: "Practice English today — your tutor is ready for you." },
   ];

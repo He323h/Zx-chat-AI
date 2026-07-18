@@ -39,7 +39,7 @@ function SplashScreen() {
       }}
     >
       {/* Accessible loading announcement */}
-      <span role="status" aria-live="polite" className="sr-only">Loading EngliFly…</span>
+      <span role="status" aria-live="polite" className="sr-only">Loading English Tutor - AI Powered…</span>
       {/* Soft radial glow behind logo */}
       <div
         className="absolute"
@@ -52,7 +52,7 @@ function SplashScreen() {
       />
       <img
         src="/owl-logo.png"
-        alt="EngliFly"
+        alt="English Tutor - AI Powered"
         style={{
           width: "38vw",
           maxWidth: 200,

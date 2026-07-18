@@ -72,9 +72,9 @@ export default function Login() {
               boxShadow: "-4px -4px 10px rgba(255,255,255,0.35), 6px 6px 18px rgba(14,143,212,0.45)",
               border: "2px solid rgba(255,255,255,0.35)",
             }}>
-            <img src="/owl-logo.png" alt="EngliFly" className="w-full h-full object-cover" />
+            <img src="/owl-logo.png" alt="English Tutor - AI Powered" className="w-full h-full object-cover" />
           </div>
-          <h1 className="text-[28px] font-black text-white tracking-tight">EngliFly</h1>
+          <h1 className="text-[28px] font-black text-white tracking-tight">English Tutor - AI Powered</h1>
           <p className="text-white/70 mt-1 text-[13px] font-medium">Your AI English tutor</p>
         </div>
 
